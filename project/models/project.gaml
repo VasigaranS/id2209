@@ -11,121 +11,41 @@ model project
 /* Insert your model definition here */
 
 global {
-	bool firstArrival <- false;	// this is a flag to start_conversation
-	// when agent gets to target, if no neighbor found, consider yourself first and set the flag to true
+	int firstArrival <- nil;	// this is a flag to decide who arrives first and they start conversation
+	// when agent gets to target, if no neighbor found, consider itself first and set firstArrival to its own index
 	int noAgents<-10;
 	init{
 	
 		float globalMood <- 0.0; 
-		
+	
 		create Bar with:(location:point (15,15));
 		create ConcertHall with:(location:point (60,60));
 		
-		
-		create RockGuest number:noAgents;
-		create IndieGuest number:noAgents;
-		create PopGuest number:noAgents;
-		create ClassicalGuest number:noAgents;
-		create RapGuest number:noAgents;
-
+		create RockGuest number:noAgents {
+			index <- self.index;
+		}
+		create RapGuest number:noAgents {
+			index <- self.index;
+		}
+		create PopGuest number:noAgents {
+			index <- self.index;
+		}
+		create ClassicalGuest number:noAgents {
+			index <- self.index;
+		}
+		create IndieGuest number:noAgents {
+			index <- self.index;
+		}		
 	}
 }
 
-
-species RockGuest skills:[moving]{
-
-	bool wander <- true;
-//	String travelStatus <- 'stopped'; // stopped , talking , moving
+species RockGuest skills:[fipa, moving] {
+	
+	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
 	bool travel <- false;
-	String target <- nil;
+	string target <- nil;
 	point targetPoint <- nil;
-
-	int mood;
-	float talkative;
-	float creative;
-	float shy;
-	float adventure;
-	float emotional;
-	float myPersonality;
-    float barPersonality;
-    float concertHallPersonality;
-	
-	init {
-		talkative <- rnd(0,10.0);
-		creative <- rnd(0,10.0);
-		shy <- rnd(0,10.0);
-		adventure <- rnd(0,10.0);
-		emotional <- rnd(0,10.0);
-		mood <- rnd(0,10); // start with a random mood
-        // weighted personalities based on what attributes they like more
-		myPersonality <- (talkative * 1.0) + (creative * 0.75) + (shy * 0) + (adventure * 0.5) + (emotional * 0.25);
-        barPersonality <- myPersonality + 5.0;
-        concertHallPersonality <- myPersonality - 5.0;		
-	}
-			
-	aspect base{
-		rgb agentcolor<- rgb('purple');
-		draw circle(1) color: agentcolor;
-	}
-	
-	action toggleFlag (bool wanderArg, bool travelArg) {
-		wander <- wanderArg;
-		travel <- travelArg;
-	}
-
-	reflex wander when: (wander = true) {
-		do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
-		do wander;		
-	}
-
-	reflex go_travel when: (travel = true) {
-		if (target is 'bar') {
-			targetPoint <- Bar.location;
-			do goto target:targetPoint;
-		} else {
-			targetPoint <- ConcertHall.location;
-			do goto target:targetPoint;
-		}
-	}
-
-	// This only gets triggered if the agent is at location == target
-    reflex findNeighbor when: (self.location = targetPoint) {
-		
-		agent neighbor <- agents at_distance(2); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-
-		if (neighbor = nil) {
-			if (firstArrival = nil) {
-				// set yourself as firstArrival
-				firstArrival <- self.index;
-			}
-		}
-		else if (neighbor != nil) {
-			if (firstArrival is self.index) {
-				// start conversation
-				do startConveration;
-			}
-			else {
-				// you have a neighbor but you're not firstArrival
-				// Wait for the conversation and respond to whatever you get
-			}
-		}
-	}
-
-	// not a reflex because we only want to run it when called
-	action startConveration {
-		
-	}
-	
-}
-
-
-species RapGuest skills:[moving]{
-
-	bool wander <- true;
-//	String travelStatus <- 'stopped'; // stopped , talking , moving
-	bool travel <- false;
-	String target <- nil;
-	point targetPoint <- nil;
+	int index;
 	
 	int mood;
 	float talkative;
@@ -155,28 +75,274 @@ species RapGuest skills:[moving]{
 		draw circle(1) color: agentcolor;
 	}
 	
+	action toggleFlag (bool wanderArg, bool travelArg) {
+		wander <- wanderArg;
+		travel <- travelArg;
+	}
+
+	reflex wander when: (wander = true) {
+		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
+		do wander;		
+	}
+
+	reflex go_travel when: (travel = true) {
+		if (target = 'bar') {
+			targetPoint <- {15,15}; // Bar location
+			//do goto target:targetPoint;
+		} else {
+			targetPoint <- {60,60};	// Concert hall location
+			//do goto target:targetPoint;
+		}
+	}
+	
+	// This only gets triggered if the agent is at location == target
+    reflex findNeighbor when: (location = targetPoint) {
+		agent neighbor <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		if (neighbor = nil) {
+			if (firstArrival = nil) {
+				// set yourself as firstArrival
+				firstArrival <- index;
+			}
+		}
+		else { // neighbor is not nil
+			if (firstArrival = index) {
+				// start conversation
+				do startConveration;
+			}
+		}
+	}
+	
+	reflex respondToInitiator when:(!empty(requests)) {
+		message requestFromInitiator<-(requests at 0);
+		float initiatorPersonality <- requestFromInitiator.contents;
+		if (target = 'bar') {
+			// compute mood based on personality received
+			do changeMood(barPersonality, initiatorPersonality);
+			// respond with your own personality
+			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
+		} else {
+			// compute mood based on personality received
+			do changeMood(concertHallPersonality, initiatorPersonality);
+			// respond with your own personality
+			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
+		}
+	}
+
+	reflex readGuestResponse when: (!(empty(informs))) {
+		message responseFromGuest <- (informs at 0);
+		float guestPersonality <- responseFromGuest.contents;
+		if (target = 'bar') {
+			// compute mood based on personality received
+			do changeMood(barPersonality, guestPersonality);
+		} else {
+			// compute mood based on personality received
+			do changeMood(concertHallPersonality, guestPersonality);
+		}	
+	}
+
+
+	// not a reflex because we only want to run it when called
+	action startConveration {
+		agent neighbor <- agents at_distance(1); // find agent at distance of 1
+		if (target = 'bar') {
+			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
+		} else {
+			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
+		}
+	}
+
+	action changeMood (float personality, float otherAgentPersonality) {
+		// compute mood based on personality received
+		if (personality < otherAgentPersonality) {
+			mood <- mood + 1; // guest is greater personality, mood rises
+		} else if (personality > otherAgentPersonality) {
+			mood <- mood - 1; // guest is lower personality, mood falls
+		} else {
+			mood <- mood + 2; // guest and I are exact matches, mood rises double
+		}
+	}
+}
+
+species RapGuest skills:[fipa, moving] {
+
+	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
+	bool travel <- false;
+	string target <- nil;
+	point targetPoint <- nil;
+	int index;
+	
+	int mood;
+	float talkative;
+	float creative;
+	float shy;
+	float adventure;
+	float emotional;
+	float myPersonality;
+    float barPersonality;
+    float concertHallPersonality;
+	
+	init {
+		talkative <- rnd(0,10.0);
+		creative <- rnd(0,10.0);
+		shy <- rnd(0,10.0);
+		adventure <- rnd(0,10.0);
+		emotional <- rnd(0,10.0);
+		mood <- rnd(0,10); // start with a random mood
+        // weighted personalities based on what attributes they like more
+		myPersonality <- (talkative * 0.25) + (creative * 0) + (shy * 0.5) + (adventure * 1) + (emotional * 0.75);
+        barPersonality <- myPersonality;    // +/- 0, ie no change in personality
+        concertHallPersonality <- myPersonality;
+	}
+
+	aspect base {
+		rgb agentcolor<- rgb('orange');
+		draw circle(1) color: agentcolor;
+	}
+	
+	action toggleFlag (bool wanderArg, bool travelArg) {
+		wander <- wanderArg;
+		travel <- travelArg;
+	}
+
+	reflex wander when: (wander = true) {
+		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
+		do wander;		
+	}
+
+	reflex go_travel when: (travel = true) {
+		if (target = 'bar') {
+			targetPoint <- {15,15}; // Bar location
+			//do goto target:targetPoint;
+		} else {
+			targetPoint <- {60,60};	// Concert hall location
+			//do goto target:targetPoint;
+		}
+	}
+	
+	// This only gets triggered if the agent is at location == target
+    reflex findNeighbor when: (location = targetPoint) {
+		agent neighbor <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		if (neighbor = nil) {
+			if (firstArrival = nil) {
+				// set yourself as firstArrival
+				firstArrival <- index;
+			}
+		}
+		else { // neighbor is not nil
+			if (firstArrival = index) {
+				// start conversation
+				do startConveration;
+			}
+		}
+	}
+	
+	reflex respondToInitiator when:(!empty(requests)) {
+		message requestFromInitiator<-(requests at 0);
+		float initiatorPersonality <- requestFromInitiator.contents;
+		if (target = 'bar') {
+			// compute mood based on personality received
+			do changeMood(barPersonality, initiatorPersonality);
+			// respond with your own personality
+			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
+		} else {
+			// compute mood based on personality received
+			do changeMood(concertHallPersonality, initiatorPersonality);
+			// respond with your own personality
+			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
+		}
+	}
+
+	reflex readGuestResponse when: (!(empty(informs))) {
+		message responseFromGuest <- (informs at 0);
+		float guestPersonality <- responseFromGuest.contents;
+		if (target = 'bar') {
+			// compute mood based on personality received
+			do changeMood(barPersonality, guestPersonality);
+		} else {
+			// compute mood based on personality received
+			do changeMood(concertHallPersonality, guestPersonality);
+		}	
+	}
+
+
+	// not a reflex because we only want to run it when called
+	action startConveration {
+		agent neighbor <- agents at_distance(1); // find agent at distance of 1
+		if (target = 'bar') {
+			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
+		} else {
+			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
+		}
+	}
+
+	action changeMood (float personality, float otherAgentPersonality) {
+		// compute mood based on personality received
+		if (personality < otherAgentPersonality) {
+			mood <- mood + 1; // guest is greater personality, mood rises
+		} else if (personality > otherAgentPersonality) {
+			mood <- mood - 1; // guest is lower personality, mood falls
+		} else {
+			mood <- mood + 2; // guest and I are exact matches, mood rises double
+		}
+	}
+}
+
+species PopGuest skills:[fipa, moving] {
+
+	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
+	bool travel <- false;
+	string target <- nil;
+	point targetPoint <- nil;
+	int index;
+
+	int mood;
+	float talkative;
+	float creative;
+	float shy;
+	float adventure;
+	float emotional;
+	float myPersonality;
+    float barPersonality;
+    float concertHallPersonality;
+
+	init {
+		talkative <- rnd(0,10.0);
+		creative <- rnd(0,10.0);
+		shy <- rnd(0,10.0);
+		adventure <- rnd(0,10.0);
+		emotional <- rnd(0,10.0);
+		mood <- rnd(0,10); // start with a random mood
+        // weighted personalities based on what attributes they like more
+		myPersonality <- (talkative * 0.75) + (creative * 0.5) + (shy * 1) + (adventure * 0) + (emotional * 0.25);
+        barPersonality <- myPersonality + 5.0;
+        concertHallPersonality <- myPersonality - 5.0;
+	}
+    
+	aspect base{
+		rgb agentcolor<- rgb('blue');
+		draw circle(1) color: agentcolor;
+	}
+	
 	reflex wander when: (wander = true) {
 		do wander;
 	}
 
 	reflex go_travel when: (travel = true) {
-		if (target is 'bar') {
-			do goto target:Bar.location;
+		if (target = 'bar') {
+			//do goto target:{15,15};
 		} else {
-			do goto target:ConcertHall.location;
+			//do goto target:{60,60};
 		}
-
 	}
 }
 
+species ClassicalGuest skills:[fipa, moving] {
 
-species ClassicalGuest skills:[moving]{
-
-	bool wander <- true;
-//	String travelStatus <- 'stopped'; // stopped , talking , moving
+	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
 	bool travel <- false;
-	String target <- nil;
+	string target <- nil;
 	point targetPoint <- nil;
+	int index;
 
 	int mood;
 	float talkative;
@@ -212,75 +378,22 @@ species ClassicalGuest skills:[moving]{
 	}
 
 	reflex go_travel when: (travel = true) {
-		if (target is 'bar') {
-			do goto target:Bar.location;
+		if (target = 'bar') { // Bar location
+			//do goto target:{15,15};
 		} else {
-			do goto target:ConcertHall.location;
+			//do goto target:{60,60};	// Concert hall location
 		}
 		
 	}
 }
 
+species IndieGuest skills:[fipa, moving] {
 
-
-species PopGuest skills:[moving]{
-
-	bool wander <- true;
-//	String travelStatus <- 'stopped'; // stopped , talking , moving
+	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
 	bool travel <- false;
-	String target <- nil;
+	string target <- nil;
 	point targetPoint <- nil;
-
-	int mood;
-	float talkative;
-	float creative;
-	float shy;
-	float adventure;
-	float emotional;
-	float myPersonality;
-    float barPersonality;
-    float concertHallPersonality;
-
-	init {
-		talkative <- rnd(0,10.0);
-		creative <- rnd(0,10.0);
-		shy <- rnd(0,10.0);
-		adventure <- rnd(0,10.0);
-		emotional <- rnd(0,10.0);
-		mood <- rnd(0,10); // start with a random mood
-        // weighted personalities based on what attributes they like more
-		myPersonality <- (talkative * 0.75) + (creative * 0.5) + (shy * 1) + (adventure * 0) + (emotional * 0.25);
-        barPersonality <- myPersonality + 5.0;
-        concertHallPersonality <- myPersonality - 5.0;
-	}
-    
-	aspect base{
-		rgb agentcolor<- rgb('blue');
-		draw circle(1) color: agentcolor;
-	}
-	
-	reflex wander when: (wander = true) {
-		do wander;
-	}
-
-	reflex go_travel when: (travel = true) {
-		if (target is 'bar') {
-			do goto target:Bar.location;
-		} else {
-			do goto target:ConcertHall.location;
-		}
-
-	}
-}
-
-
-species IndieGuest skills:[moving]{
-
-	bool wander <- true;
-//	String travelStatus <- 'stopped'; // stopped , talking , moving
-	bool travel <- false;
-	String target <- nil;
-	point targetPoint <- nil;
+	int index;
 
 	int mood;
 	float talkative;
@@ -315,19 +428,16 @@ species IndieGuest skills:[moving]{
 	}
 
 	reflex go_travel when: (travel = true) {
-		if (target is 'bar') {
-			do goto target:Bar.location;
+		if (target = 'bar') { // Bar location
+			//do goto target:{15,15};
 		} else {
-			do goto target:ConcertHall.location;
+			//do goto target:{60,60};	// Concert hall location
 		}
 
 	}
 }
 
-
-
 species Bar{
-	
 	aspect base{
 		draw rectangle(7,4) at: location color: #yellow;
 	}
@@ -335,26 +445,19 @@ species Bar{
 
 
 species ConcertHall{
-	
 	aspect base{
 		draw rectangle(7,4) at: location color: #green;
 	}
 }
 
 experiment name type: gui {
-	// Define parameters here if necessary
-	// parameter "My parameter" category: "My parameters" var: one_global_attribute;
-	
-	// Define attributes, actions, a init section and behaviors if necessary
-	// init { }
-		
 	output {
-		display mydisplay{
+		display mydisplay type: opengl {
 			species RockGuest aspect:base;
-			species IndieGuest aspect:base;
+			species RapGuest aspect:base;
 			species PopGuest aspect:base;
 			species ClassicalGuest aspect:base;
-			species RapGuest aspect:base;
+			species IndieGuest aspect:base;
 			species Bar aspect:base;
 			species ConcertHall aspect:base;
 		}
