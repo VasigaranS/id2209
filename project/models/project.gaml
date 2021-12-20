@@ -39,6 +39,9 @@ global {
 	}
 }
 
+//TODO Global Decider agent that informs two random guests to go to two locations (2 for bar, 2 concertHall)
+//TODO Decider picks by randomly picking two guest types and a random index
+
 species RockGuest skills:[fipa, moving] {
 	
 	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
