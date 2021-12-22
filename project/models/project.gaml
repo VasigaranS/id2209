@@ -13,36 +13,193 @@ model project
 global {
 	int firstArrival <- nil;	// this is a flag to decide who arrives first and they start conversation
 	// when agent gets to target, if no neighbor found, consider itself first and set firstArrival to its own index
-	int noAgents<-10;
+	int noAgents<-5;
 	init{
 	
 		float globalMood <- 0.0; 
 	
 		create Bar with:(location:point (15,15));
 		create ConcertHall with:(location:point (60,60));
+		create DestinyAgent;
 		
 		create RockGuest number:noAgents {
-			index <- self.index;
+			//index <- self.index;
 		}
 		create RapGuest number:noAgents {
-			index <- self.index;
+			//index <- self.index;
+			//write(index);
 		}
 		create PopGuest number:noAgents {
-			index <- self.index;
+			//index <- self.index;
 		}
 		create ClassicalGuest number:noAgents {
-			index <- self.index;
+			//index <- self.index;
 		}
 		create IndieGuest number:noAgents {
-			index <- self.index;
+			//index <- self.index;
+		}
+		
+		
+		
+		loop counter from:0 to:noAgents-1{
+			RockGuest myagent<-RockGuest[counter];
+			myagent <- myagent.setIndex(counter);
+		}
+		
+		loop counter from:0 to:noAgents-1{
+			RapGuest myagent<-RapGuest[counter];
+			myagent <- myagent.setIndex(counter);
+		}
+		
+		loop counter from:0 to:noAgents-1{
+			PopGuest myagent<-PopGuest[counter];
+			myagent <- myagent.setIndex(counter);
+		}
+		
+		loop counter from:0 to:noAgents-1{
+			ClassicalGuest myagent<-ClassicalGuest[counter];
+			myagent <- myagent.setIndex(counter);
+		}
+		
+		loop counter from:0 to:noAgents-1{
+			IndieGuest myagent<-IndieGuest[counter];
+			myagent <- myagent.setIndex(counter);
 		}		
 	}
 }
-
+//[rockguest,rapguest,pop,indie,classical]
+//[0,noAgents-1]
+//[bar,concerthall]
 //TODO Global Decider agent that informs two random guests to go to two locations (2 for bar, 2 concertHall)
 //TODO Decider picks by randomly picking two guest types and a random index
 
+
+
+species DestinyAgent  {
+	
+	int genre1;
+	int f1;
+	int genre2;
+	int f2;
+	int genre3;
+	int f3;
+	int genre4;
+	int f4;
+	bool meet<-true;
+	
+	
+	
+	list<string>genrelist<-['RockGuest','RapGuest','PopGuest','ClassicalGuest','IndieGuest'];
+	
+	reflex arrangeMeeting when: meet=true{
+		 genre1<-rnd(0,4);
+		 f1<-rnd(0,noAgents-1);
+		 genre2<-rnd(0,4);
+		 f2<-rnd(0,noAgents-1);
+		 //meet<-false;
+		 //write(genre1);
+		 
+		 write(genrelist[genre1]);
+		 f3<-rnd(0,noAgents-1);
+		 genre3<-rnd(0,4);
+		 f4<-rnd(0,noAgents-1);
+		 genre4<-rnd(0,4);
+		 
+		 
+		 
+		 loop while: (f3=f1 or f3=f2){
+		 	f3<-rnd(0,noAgents-1);
+		 }
+		 
+		 loop while: (f4=f1 or f4=f2 or f4=f3){
+		 	f4<-rnd(0,noAgents-1);
+		 }
+		 
+		 
+		 //first meeting
+		 do asktomeet(genrelist[genre1],f1,'bar');
+		 do asktomeet(genrelist[genre2],f2,'bar');
+		 
+		 //second meeting
+		 do asktomeet(genrelist[genre3],f3,'concerthall');
+		 do asktomeet(genrelist[genre4],f4,'concerthall');
+		 meet<-false;
+		 
+		 
+		 
+		 
+		 
+		 
+		 
+		
+	}
+	
+	
+	action asktomeet(string genre,int f,string t){
+		
+		if(genre='RockGuest'){
+			
+			ask RockGuest[f]{
+		 	self.travel<-true;
+		 	self.target<-t;
+		 	
+		 }
+		}
+		
+		else if(genre='RapGuest'){
+			
+			ask RapGuest[f]{
+		 	self.travel<-true;
+		 	self.target<-t;
+		 	
+		 }
+			
+		}
+		
+		
+		else if(genre='PopGuest'){
+			
+			ask PopGuest[f]{
+		 	self.travel<-true;
+		 	self.target<-t;
+		 	
+		 }
+			
+		}
+		
+		else if(genre='ClassicalGuest'){
+			
+			ask ClassicalGuest[f]{
+		 	self.travel<-true;
+		 	self.target<-t;
+		 	
+		 }
+			
+		}
+		
+		else if(genre='IndieGuest'){
+			
+			ask IndieGuest[f]{
+		 	self.travel<-true;
+		 	self.target<-t;
+		 	
+		 }
+			
+		}
+		
+		
+	}
+	
+	
+}
+
+
+
+
 species RockGuest skills:[fipa, moving] {
+	
+	
+	
 	
 	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
 	bool travel <- false;
@@ -60,6 +217,10 @@ species RockGuest skills:[fipa, moving] {
     float barPersonality;
     float concertHallPersonality;
 	
+	bool test<-false;
+	
+	
+	
 	init {
 		talkative <- rnd(0,10.0);
 		creative <- rnd(0,10.0);
@@ -69,8 +230,8 @@ species RockGuest skills:[fipa, moving] {
 		mood <- rnd(0,10); // start with a random mood
         // weighted personalities based on what attributes they like more
 		myPersonality <- (talkative * 1) + (creative * 0.75) + (shy * 0) + (adventure * 0.5) + (emotional * 0.25);
-        barPersonality <- myPersonality;    // +/- 0, ie no change in personality
-        concertHallPersonality <- myPersonality;
+        barPersonality <- myPersonality+5.0;    // +/- 0, ie no change in personality
+        concertHallPersonality <- myPersonality-5.0;
 	}
 
 	aspect base {
@@ -82,19 +243,30 @@ species RockGuest skills:[fipa, moving] {
 		wander <- wanderArg;
 		travel <- travelArg;
 	}
+	
+	action setIndex(int num){
+		index<-num;
+	}
 
 	reflex wander when: (wander = true) {
 		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
 		do wander;		
 	}
+	
+	reflex testing when:test=true{
+		
+		write(index);
+		write('worked');
+	}	
 
 	reflex go_travel when: (travel = true) {
 		if (target = 'bar') {
+			write('moving to bar');
 			targetPoint <- {15,15}; // Bar location
-			//do goto target:targetPoint;
+			do goto target:targetPoint;
 		} else {
 			targetPoint <- {60,60};	// Concert hall location
-			//do goto target:targetPoint;
+			do goto target:targetPoint;
 		}
 	}
 	
@@ -206,6 +378,10 @@ species RapGuest skills:[fipa, moving] {
 		wander <- wanderArg;
 		travel <- travelArg;
 	}
+	
+	action setIndex(int num){
+		index<-num;
+	}
 
 	reflex wander when: (wander = true) {
 		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
@@ -215,10 +391,10 @@ species RapGuest skills:[fipa, moving] {
 	reflex go_travel when: (travel = true) {
 		if (target = 'bar') {
 			targetPoint <- {15,15}; // Bar location
-			//do goto target:targetPoint;
+			do goto target:targetPoint;
 		} else {
 			targetPoint <- {60,60};	// Concert hall location
-			//do goto target:targetPoint;
+			do goto target:targetPoint;
 		}
 	}
 	
@@ -330,6 +506,10 @@ species PopGuest skills:[fipa, moving] {
 		wander <- wanderArg;
 		travel <- travelArg;
 	}
+	
+	action setIndex(int num){
+		index<-num;
+	}
 
 	reflex wander when: (wander = true) {
 		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
@@ -339,10 +519,10 @@ species PopGuest skills:[fipa, moving] {
 	reflex go_travel when: (travel = true) {
 		if (target = 'bar') {
 			targetPoint <- {15,15}; // Bar location
-			//do goto target:targetPoint;
+			do goto target:targetPoint;
 		} else {
 			targetPoint <- {60,60};	// Concert hall location
-			//do goto target:targetPoint;
+			do goto target:targetPoint;
 		}
 	}
 	
@@ -455,6 +635,10 @@ species ClassicalGuest skills:[fipa, moving] {
 		wander <- wanderArg;
 		travel <- travelArg;
 	}
+	
+	action setIndex(int num){
+		index<-num;
+	}
 
 	reflex wander when: (wander = true) {
 		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
@@ -464,10 +648,10 @@ species ClassicalGuest skills:[fipa, moving] {
 	reflex go_travel when: (travel = true) {
 		if (target = 'bar') {
 			targetPoint <- {15,15}; // Bar location
-			//do goto target:targetPoint;
+			do goto target:targetPoint;
 		} else {
 			targetPoint <- {60,60};	// Concert hall location
-			//do goto target:targetPoint;
+			do goto target:targetPoint;
 		}
 	}
 	
@@ -579,6 +763,10 @@ species IndieGuest skills:[fipa, moving] {
 		wander <- wanderArg;
 		travel <- travelArg;
 	}
+	
+	action setIndex(int num){
+		index<-num;
+	}
 
 	reflex wander when: (wander = true) {
 		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
@@ -588,10 +776,10 @@ species IndieGuest skills:[fipa, moving] {
 	reflex go_travel when: (travel = true) {
 		if (target = 'bar') {
 			targetPoint <- {15,15}; // Bar location
-			//do goto target:targetPoint;
+			do goto target:targetPoint;
 		} else {
 			targetPoint <- {60,60};	// Concert hall location
-			//do goto target:targetPoint;
+			do goto target:targetPoint;
 		}
 	}
 	
