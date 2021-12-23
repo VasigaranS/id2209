@@ -66,134 +66,109 @@ species DestinyAgent  {
 	int f3;
 	int genre4;
 	int f4;
-	
-	list<string> genrelist<-['RockGuest','RapGuest','PopGuest','ClassicalGuest','IndieGuest'];
-	
+
+	list<string> genreList <- ['RockGuest','RapGuest','PopGuest','ClassicalGuest','IndieGuest'];
+
 	reflex arrangeBarMeeting when: (barMeet="true"){
-		
-		 genre1<-rnd(0,4);
-		 f1<-rnd(0,noAgents-1);
-		 
-		 genre2<-rnd(0,4);
-	 	 f2<-rnd(0,noAgents-1);
-		 
-		 // We only need to change index when the genre type is the exact same
-		 // ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
-		 if (genre1 = genre2) {
-		 	loop while: (f2=f1){
-		 		f2<-rnd(0,noAgents-1);
-			 }
-		 }
-		  
-		 // reset firstArrival
-		 firstArrivalBar <- nil;
-		 
-		 //first meeting
-		 write 'Sending ' + genrelist[genre1] + f1 + ' to meet ' + genrelist[genre2] + f2 + ' at the bar';
-//		 do asktomeet(genrelist[genre1],f1,'bar');
-//		 do asktomeet(genrelist[genre2],f2,'bar');
-		 
+
+		genre1<-rnd(0,4);
+		f1<-rnd(0,noAgents-1);
+
+		genre2<-rnd(0,4);
+		f2<-rnd(0,noAgents-1);
+
+		// We only need to change index when the genre type is the exact same
+		// ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
+		if (genre1 = genre2) {
+		loop while: (f2=f1){
+			f2<-rnd(0,noAgents-1);
+			}
+		}
+
+		// reset firstArrival
+		firstArrivalBar <- nil;
+
+		//first meeting
+		write 'Sending ' + genreList[genre1] + f1 + ' to meet ' + genreList[genre2] + f2 + ' at the bar';
+		do asktomeet(genreList[genre1],f1,'bar');
+		do asktomeet(genreList[genre2],f2,'bar');
+
 		barMeet<-"false";
-
 	}
-	
-	reflex arrangeConcertMeeting when: (concertMeet="true"){
-			 
-		 genre3<-rnd(0,4);
-		 f3<-rnd(0,noAgents-1);
-		 
-		 genre4<-rnd(0,4);
-		 f4<-rnd(0,noAgents-1);
-		 
-		 // We only need to change index when the genre type is the exact same
-		 // ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
-		 if (genre1 = genre3 or genre1 = genre4 or genre2 = genre3 or genre2 = genre4 or genre3 = genre4) {
-			 
-			 loop while: (f3=f1) or (f3=f2) {
-			 	write 'stuck in loop f3';
-			 	f3<-rnd(0,noAgents-1);
-			 }
-			 
-			 loop while: (f4=f1) or (f4=f2) or (f4=f3) {
-			 	write 'stuck in loop f4';
-			 	f4<-rnd(0,noAgents-1);
-			 }
-		 }
- 
-		 // reset firstArrival
-		 firstArrivalConcertHall <- nil;
 
-		 //second meeting
- 		 write 'Sending ' + genrelist[genre3] + f3 + ' to meet ' + genrelist[genre4] + f4 + ' at the concert hall';
-		 do asktomeet(genrelist[genre3],f3,'concerthall');
-		 do asktomeet(genrelist[genre4],f4,'concerthall');
+	reflex arrangeConcertMeeting when: (concertMeet="true"){
+				
+		genre3<-rnd(0,4);
+		f3<-rnd(0,noAgents-1);
+
+		genre4<-rnd(0,4);
+		f4<-rnd(0,noAgents-1);
+
+		// We only need to change index when the genre type is the exact same
+		// ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
+		if (genre1 = genre3 or genre1 = genre4 or genre2 = genre3 or genre2 = genre4 or genre3 = genre4) {
+			loop while: (f3=f1) or (f3=f2) {
+				write 'stuck in loop f3';
+				f3<-rnd(0,noAgents-1);
+			}
+			loop while: (f4=f1) or (f4=f2) or (f4=f3) {
+				write 'stuck in loop f4';
+				f4<-rnd(0,noAgents-1);
+			}
+		}
+
+		// reset firstArrival
+		firstArrivalConcertHall <- nil;
+
+		//second meeting
+		write 'Sending ' + genreList[genre3] + f3 + ' to meet ' + genreList[genre4] + f4 + ' at the concert hall';
+		do asktomeet(genreList[genre3],f3,'concerthall');
+		do asktomeet(genreList[genre4],f4,'concerthall');
 
 		concertMeet<-"false";
-
 	}
 
 	action asktomeet(string genre,int f,string t){
-		
-		if(genre='RockGuest'){
-			
-			ask RockGuest[f]{
-		 	self.travel<-true;
-			self.wander<-false;
-		 	self.target<-t;
-		 	
-		 }
+		if(genre='RockGuest') {
+			ask RockGuest[f] {
+				self.travel<-true;
+				self.wander<-false;
+				self.target<-t;
+			}
 		}
-		
-		else if(genre='RapGuest'){
-			
-			ask RapGuest[f]{
-		 	self.travel<-true;
-			self.wander<-false;
-		 	self.target<-t;
-		 	
-		 }
-			
+		else if(genre='RapGuest') {	
+			ask RapGuest[f] {
+				self.travel<-true;
+				self.wander<-false;
+				self.target<-t;
+			}
 		}
-		
-		
-		else if(genre='PopGuest'){
-			
-			ask PopGuest[f]{
-		 	self.travel<-true;
-			self.wander<-false;
-		 	self.target<-t;
-		 	
-		 }
-			
+		else if(genre='PopGuest') {
+			ask PopGuest[f] {
+				self.travel<-true;
+				self.wander<-false;
+				self.target<-t;
+			}
 		}
-		
-		else if(genre='ClassicalGuest'){
-			
-			ask ClassicalGuest[f]{
-		 	self.travel<-true;
-			self.wander<-false;
-		 	self.target<-t;
-		 	
-		 }
-			
+		else if(genre='ClassicalGuest') {	
+			ask ClassicalGuest[f] {
+				self.travel<-true;
+				self.wander<-false;
+				self.target<-t;
+			}
 		}
-		
-		else if(genre='IndieGuest'){
-			
+		else if(genre='IndieGuest') {	
 			ask IndieGuest[f]{
-		 	self.travel<-true;
-			self.wander<-false;
-		 	self.target<-t;
-		 	
-		 }
-			
+				self.travel<-true;
+				self.wander<-false;
+				self.target<-t;
+			}
 		}
-		
 	}
-	
+
 	reflex computeGlobalMood when: (barMeet = "mood" or concertMeet = "mood"){
 		globalCycles <- globalCycles + 1; // keeps overall counter of global mood computations in order to get average
-		loop genre over: genrelist {
+		loop genre over: genreList {
 			loop i from:0 to:noAgents-1 {
 				if (genre = "RockGuest") {
 					globalMood <- ((globalMood + RockGuest[i].mood) / globalCycles);
@@ -212,7 +187,7 @@ species DestinyAgent  {
 				}
 			}
 		}
-		write 'Global Mood: ' + globalMood;
+		write 'Global Mood ------ ' + globalMood;
 		if (barMeet = "mood") {
 			barMeet <- "true";
 		}
@@ -222,17 +197,13 @@ species DestinyAgent  {
 	}
 }
 
-
-
-
 species RockGuest skills:[fipa, moving] {
-	
 	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
 	bool travel <- false;
 	string target <- nil;
 	point targetPoint <- nil;
 	int index;
-	
+
 	int mood;
 	float talkative;
 	float creative;
@@ -242,10 +213,6 @@ species RockGuest skills:[fipa, moving] {
 	float myPersonality;
     float barPersonality;
     float concertHallPersonality;
-	
-	bool test<-false;
-	
-	
 	
 	init {
 		talkative <- rnd(0,10.0);
@@ -264,14 +231,11 @@ species RockGuest skills:[fipa, moving] {
 		rgb agentcolor<- rgb('purple');
 		draw circle(1) color: agentcolor;
 	}
-	
-	action toggleFlag (bool wanderArg, bool travelArg) {
-		wander <- wanderArg;
-		travel <- travelArg;
-	}
 
 	reflex wander when: (wander = true) {
-		do goto target:{rnd(25,75),rnd(25,75)}; // go to random point and start wandering
+		list<point> clusters <- [{15,15}, {25,25}, {50,50}, {75,75}];
+		point cluster <- clusters[rnd(0,3)];
+		do goto target:cluster; // go to random cluster and start wandering
 		do wander;		
 	}	
 
@@ -429,17 +393,14 @@ species RapGuest skills:[fipa, moving] {
 		draw circle(1) color: agentcolor;
 	}
 	
-	action toggleFlag (bool wanderArg, bool travelArg) {
-		wander <- wanderArg;
-		travel <- travelArg;
-	}
-	
 	action setIndex(int num){
 		index<-num;
 	}
 
 	reflex wander when: (wander = true) {
-		do goto target:{rnd(25,75),rnd(25,75)}; // go to random point and start wandering
+		list<point> clusters <- [{15,15}, {25,25}, {50,50}, {75,75}];
+		point cluster <- clusters[rnd(0,3)];
+		do goto target:cluster; // go to random cluster and start wandering
 		do wander;		
 	}
 
@@ -590,17 +551,14 @@ species PopGuest skills:[fipa, moving] {
 		draw circle(1) color: agentcolor;
 	}
 	
-	action toggleFlag (bool wanderArg, bool travelArg) {
-		wander <- wanderArg;
-		travel <- travelArg;
-	}
-	
 	action setIndex(int num){
 		index<-num;
 	}
 
 	reflex wander when: (wander = true) {
-		do goto target:{rnd(25,75),rnd(25,75)}; // go to random point and start wandering
+		list<point> clusters <- [{15,15}, {25,25}, {50,50}, {75,75}];
+		point cluster <- clusters[rnd(0,3)];
+		do goto target:cluster; // go to random cluster and start wandering
 		do wander;		
 	}
 
@@ -752,17 +710,14 @@ species ClassicalGuest skills:[fipa, moving] {
 		draw circle(1) color: agentcolor;
 	}
 	
-	action toggleFlag (bool wanderArg, bool travelArg) {
-		wander <- wanderArg;
-		travel <- travelArg;
-	}
-	
 	action setIndex(int num){
 		index<-num;
 	}
 
 	reflex wander when: (wander = true) {
-		do goto target:{rnd(25,75),rnd(25,75)}; // go to random point and start wandering
+		list<point> clusters <- [{15,15}, {25,25}, {50,50}, {75,75}];
+		point cluster <- clusters[rnd(0,3)];
+		do goto target:cluster; // go to random cluster and start wandering
 		do wander;		
 	}
 
@@ -913,17 +868,14 @@ species IndieGuest skills:[fipa, moving] {
 		draw circle(1) color: agentcolor;
 	}
 	
-	action toggleFlag (bool wanderArg, bool travelArg) {
-		wander <- wanderArg;
-		travel <- travelArg;
-	}
-	
 	action setIndex(int num){
 		index<-num;
 	}
 
 	reflex wander when: (wander = true) {
-		do goto target:{rnd(25,75),rnd(25,75)}; // go to random point and start wandering
+		list<point> clusters <- [{15,15}, {25,25}, {50,50}, {75,75}];
+		point cluster <- clusters[rnd(0,3)];
+		do goto target:cluster; // go to random cluster and start wandering
 		do wander;		
 	}
 
@@ -1041,14 +993,14 @@ species IndieGuest skills:[fipa, moving] {
 
 species Bar{
 	aspect base{
-		//draw rectangle(7,4) at: location color: #yellow;
+		draw rectangle(7,4) at: location color: #blue;
 	}
 }
 
 
 species ConcertHall{
 	aspect base{
-		//draw rectangle(7,4) at: location color: #green;
+		draw rectangle(7,4) at: location color: #green;
 	}
 }
 
