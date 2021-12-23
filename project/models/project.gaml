@@ -11,69 +11,50 @@ model project
 /* Insert your model definition here */
 
 global {
-	int firstArrival <- nil;	// this is a flag to decide who arrives first and they start conversation
+	string firstArrivalBar <- nil;	// this is a flag to decide who arrives first and they start conversation
+	string firstArrivalConcertHall <- nil;	// this is a flag to decide who arrives first and they start conversation
 	// when agent gets to target, if no neighbor found, consider itself first and set firstArrival to its own index
+	string barMeet<-"true";
+	string concertMeet<-"true";
 	int noAgents<-5;
+	float globalMood;
+	int globalCycles;	// Total number of interactions (globalMood is computed after each interaction)
 	init{
 	
-		float globalMood <- 0.0; 
-	
-		create Bar with:(location:point (15,15));
-		create ConcertHall with:(location:point (60,60));
+		globalMood <- 0.0; 
+		globalCycles <- 0;
+		
+		create Bar with:(location:point (0,0));
+		create ConcertHall with:(location:point (100,100));
 		create DestinyAgent;
 		
 		create RockGuest number:noAgents {
-			//index <- self.index;
+			loop i from:0 to:noAgents-1 {
+				RockGuest[i].index <- i;
+			}
 		}
 		create RapGuest number:noAgents {
-			//index <- self.index;
-			//write(index);
+			loop i from:0 to:noAgents-1 {
+				RapGuest[i].index <- i;
+			}
 		}
 		create PopGuest number:noAgents {
-			//index <- self.index;
+			loop i from:0 to:noAgents-1 {
+				PopGuest[i].index <- i;
+			}		
 		}
 		create ClassicalGuest number:noAgents {
-			//index <- self.index;
+			loop i from:0 to:noAgents-1 {
+				ClassicalGuest[i].index <- i;
+			}		
 		}
 		create IndieGuest number:noAgents {
-			//index <- self.index;
-		}
-		
-		
-		
-		loop counter from:0 to:noAgents-1{
-			RockGuest myagent<-RockGuest[counter];
-			myagent <- myagent.setIndex(counter);
-		}
-		
-		loop counter from:0 to:noAgents-1{
-			RapGuest myagent<-RapGuest[counter];
-			myagent <- myagent.setIndex(counter);
-		}
-		
-		loop counter from:0 to:noAgents-1{
-			PopGuest myagent<-PopGuest[counter];
-			myagent <- myagent.setIndex(counter);
-		}
-		
-		loop counter from:0 to:noAgents-1{
-			ClassicalGuest myagent<-ClassicalGuest[counter];
-			myagent <- myagent.setIndex(counter);
-		}
-		
-		loop counter from:0 to:noAgents-1{
-			IndieGuest myagent<-IndieGuest[counter];
-			myagent <- myagent.setIndex(counter);
-		}		
+			loop i from:0 to:noAgents-1 {
+				IndieGuest[i].index <- i;
+			}		
+		}	
 	}
 }
-//[rockguest,rapguest,pop,indie,classical]
-//[0,noAgents-1]
-//[bar,concerthall]
-//TODO Global Decider agent that informs two random guests to go to two locations (2 for bar, 2 concertHall)
-//TODO Decider picks by randomly picking two guest types and a random index
-
-
 
 species DestinyAgent  {
 	
@@ -85,62 +66,79 @@ species DestinyAgent  {
 	int f3;
 	int genre4;
 	int f4;
-	bool meet<-true;
 	
+	list<string> genrelist<-['RockGuest','RapGuest','PopGuest','ClassicalGuest','IndieGuest'];
 	
-	
-	list<string>genrelist<-['RockGuest','RapGuest','PopGuest','ClassicalGuest','IndieGuest'];
-	
-	reflex arrangeMeeting when: meet=true{
+	reflex arrangeBarMeeting when: (barMeet="true"){
+		
 		 genre1<-rnd(0,4);
 		 f1<-rnd(0,noAgents-1);
+		 
 		 genre2<-rnd(0,4);
-		 f2<-rnd(0,noAgents-1);
-		 //meet<-false;
-		 //write(genre1);
+	 	 f2<-rnd(0,noAgents-1);
 		 
-		 write(genrelist[genre1]);
-		 f3<-rnd(0,noAgents-1);
-		 genre3<-rnd(0,4);
-		 f4<-rnd(0,noAgents-1);
-		 genre4<-rnd(0,4);
-		 
-		 
-		 
-		 loop while: (f3=f1 or f3=f2){
-		 	f3<-rnd(0,noAgents-1);
+		 // We only need to change index when the genre type is the exact same
+		 // ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
+		 if (genre1 = genre2) {
+		 	loop while: (f2=f1){
+		 		f2<-rnd(0,noAgents-1);
+			 }
 		 }
-		 
-		 loop while: (f4=f1 or f4=f2 or f4=f3){
-		 	f4<-rnd(0,noAgents-1);
-		 }
-		 
+		  
+		 // reset firstArrival
+		 firstArrivalBar <- nil;
 		 
 		 //first meeting
-		 do asktomeet(genrelist[genre1],f1,'bar');
-		 do asktomeet(genrelist[genre2],f2,'bar');
+		 write 'Sending ' + genrelist[genre1] + f1 + ' to meet ' + genrelist[genre2] + f2 + ' at the bar';
+//		 do asktomeet(genrelist[genre1],f1,'bar');
+//		 do asktomeet(genrelist[genre2],f2,'bar');
 		 
-		 //second meeting
-		 do asktomeet(genrelist[genre3],f3,'concerthall');
-		 do asktomeet(genrelist[genre4],f4,'concerthall');
-		 meet<-false;
-		 
-		 
-		 
-		 
-		 
-		 
-		 
-		
+		barMeet<-"false";
+
 	}
 	
-	
+	reflex arrangeConcertMeeting when: (concertMeet="true"){
+			 
+		 genre3<-rnd(0,4);
+		 f3<-rnd(0,noAgents-1);
+		 
+		 genre4<-rnd(0,4);
+		 f4<-rnd(0,noAgents-1);
+		 
+		 // We only need to change index when the genre type is the exact same
+		 // ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
+		 if (genre1 = genre3 or genre1 = genre4 or genre2 = genre3 or genre2 = genre4 or genre3 = genre4) {
+			 
+			 loop while: (f3=f1) or (f3=f2) {
+			 	write 'stuck in loop f3';
+			 	f3<-rnd(0,noAgents-1);
+			 }
+			 
+			 loop while: (f4=f1) or (f4=f2) or (f4=f3) {
+			 	write 'stuck in loop f4';
+			 	f4<-rnd(0,noAgents-1);
+			 }
+		 }
+ 
+		 // reset firstArrival
+		 firstArrivalConcertHall <- nil;
+
+		 //second meeting
+ 		 write 'Sending ' + genrelist[genre3] + f3 + ' to meet ' + genrelist[genre4] + f4 + ' at the concert hall';
+		 do asktomeet(genrelist[genre3],f3,'concerthall');
+		 do asktomeet(genrelist[genre4],f4,'concerthall');
+
+		concertMeet<-"false";
+
+	}
+
 	action asktomeet(string genre,int f,string t){
 		
 		if(genre='RockGuest'){
 			
 			ask RockGuest[f]{
 		 	self.travel<-true;
+			self.wander<-false;
 		 	self.target<-t;
 		 	
 		 }
@@ -150,6 +148,7 @@ species DestinyAgent  {
 			
 			ask RapGuest[f]{
 		 	self.travel<-true;
+			self.wander<-false;
 		 	self.target<-t;
 		 	
 		 }
@@ -161,6 +160,7 @@ species DestinyAgent  {
 			
 			ask PopGuest[f]{
 		 	self.travel<-true;
+			self.wander<-false;
 		 	self.target<-t;
 		 	
 		 }
@@ -171,6 +171,7 @@ species DestinyAgent  {
 			
 			ask ClassicalGuest[f]{
 		 	self.travel<-true;
+			self.wander<-false;
 		 	self.target<-t;
 		 	
 		 }
@@ -181,25 +182,50 @@ species DestinyAgent  {
 			
 			ask IndieGuest[f]{
 		 	self.travel<-true;
+			self.wander<-false;
 		 	self.target<-t;
 		 	
 		 }
 			
 		}
 		
-		
 	}
 	
-	
+	reflex computeGlobalMood when: (barMeet = "mood" or concertMeet = "mood"){
+		globalCycles <- globalCycles + 1; // keeps overall counter of global mood computations in order to get average
+		loop genre over: genrelist {
+			loop i from:0 to:noAgents-1 {
+				if (genre = "RockGuest") {
+					globalMood <- ((globalMood + RockGuest[i].mood) / globalCycles);
+				}
+				if (genre = "RapGuest") {
+					globalMood <- ((globalMood + RapGuest[i].mood) / globalCycles);
+				}
+				if (genre = "PopGuest") {
+					globalMood <- ((globalMood + PopGuest[i].mood) / globalCycles);
+				}
+				if (genre = "ClassicalGuest") {
+					globalMood <- ((globalMood + ClassicalGuest[i].mood) / globalCycles);
+				}
+				if (genre = "IndieGuest") {
+					globalMood <- ((globalMood + IndieGuest[i].mood) / globalCycles);
+				}
+			}
+		}
+		write 'Global Mood: ' + globalMood;
+		if (barMeet = "mood") {
+			barMeet <- "true";
+		}
+		else if (concertMeet = "mood") {
+			concertMeet <- "true";
+		}
+	}
 }
 
 
 
 
 species RockGuest skills:[fipa, moving] {
-	
-	
-	
 	
 	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
 	bool travel <- false;
@@ -243,86 +269,112 @@ species RockGuest skills:[fipa, moving] {
 		wander <- wanderArg;
 		travel <- travelArg;
 	}
-	
-	action setIndex(int num){
-		index<-num;
-	}
 
 	reflex wander when: (wander = true) {
-		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
+		do goto target:{rnd(25,75),rnd(25,75)}; // go to random point and start wandering
 		do wander;		
-	}
-	
-	reflex testing when:test=true{
-		
-		write(index);
-		write('worked');
 	}	
 
 	reflex go_travel when: (travel = true) {
 		if (target = 'bar') {
-			write('moving to bar');
-			targetPoint <- {15,15}; // Bar location
+			write 'I ' + self.name + ' am moving to bar';
+			targetPoint <- {0,0}; // Bar location
 			do goto target:targetPoint;
 		} else {
-			targetPoint <- {60,60};	// Concert hall location
+			write 'I ' + self.name + ' am moving to concert hall';
+			targetPoint <- {100,100};	// Concert hall location
 			do goto target:targetPoint;
 		}
 	}
 	
 	// This only gets triggered if the agent is at location == target
-    reflex findNeighbor when: (location = targetPoint) {
-		agent neighbor <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		if (neighbor = nil) {
-			if (firstArrival = nil) {
-				// set yourself as firstArrival
-				firstArrival <- index;
+    reflex findNeighbor when: (location = targetPoint) and (travel = true) {
+		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		agent neighbor;
+		write 'I am ' + self.name + ' and my neighbors are: ' + neighbors;
+		loop n over: neighbors {
+			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') {
+				neighbor <- n;
+				write 'I am ' + self.name + ' and my neighbor at ' + target + ' is : ' + neighbor;
+			}
+		}
+		
+		if (length(neighbors) <= 1) {
+			if (target = 'bar') {
+				firstArrivalBar <- self.name;
+			}
+			else {
+				firstArrivalConcertHall <- self.name;
 			}
 		}
 		else { // neighbor is not nil
-			if (firstArrival = index) {
+			write 'I ' + self.name + ' found a neighbor - ' + neighbor;
+			if (firstArrivalBar = self.name) or (firstArrivalConcertHall = self.name) {
 				// start conversation
+				write 'I ' + self.name + ' am starting the conversation';
 				do startConveration;
 			}
 		}
 	}
 	
 	reflex respondToInitiator when:(!empty(requests)) {
+		write 'I ' + self.name + ' have received a conversation from someone!';
 		message requestFromInitiator<-(requests at 0);
-		float initiatorPersonality <- requestFromInitiator.contents;
+		float initiatorPersonality <- requestFromInitiator.contents as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, initiatorPersonality);
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
+			write 'I ' + self.name + ' have responded with my bar personality: ' + barPersonality;
 		} else {
 			// compute mood based on personality received
 			do changeMood(concertHallPersonality, initiatorPersonality);
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
+			write 'I ' + self.name + ' have responded with my concert personality: ' + concertHallPersonality;
 		}
+		self.travel <- false;
+		self.wander <- true;
 	}
 
 	reflex readGuestResponse when: (!(empty(informs))) {
 		message responseFromGuest <- (informs at 0);
-		float guestPersonality <- responseFromGuest.contents;
+		write 'I ' + self.name + ' have received a response from the guest';
+		float guestPersonality <- responseFromGuest.contents as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
 		} else {
 			// compute mood based on personality received
 			do changeMood(concertHallPersonality, guestPersonality);
-		}	
+		}
+		self.travel <- false;
+		self.wander <- true;
+		if (target = 'bar') {
+			barMeet <- "mood";
+		} 
+		else {
+			concertMeet <- "mood";
+		}
 	}
 
 
 	// not a reflex because we only want to run it when called
 	action startConveration {
-		agent neighbor <- agents at_distance(1); // find agent at distance of 1
+		list<agent> neighbors <- agents at_distance(1);
+		agent neighbor;
+		loop n over: neighbors {
+			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') {
+				neighbor <- n;
+			}
+		}
 		if (target = 'bar') {
-			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
+			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
+			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the bar';
 		} else {
-			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
+			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
+			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the concert hall';	
 		}
 	}
 
@@ -330,10 +382,13 @@ species RockGuest skills:[fipa, moving] {
 		// compute mood based on personality received
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
+			write 'My ' + self.name + ' mood increased by 1: ' + mood;
 		} else if (personality > otherAgentPersonality) {
 			mood <- mood - 1; // guest is lower personality, mood falls
+			write 'My ' + self.name + ' mood decreased by 1: ' + mood;
 		} else {
 			mood <- mood + 2; // guest and I are exact matches, mood rises double
+			write 'My ' + self.name + ' mood increased by 2: ' + mood;
 		}
 	}
 }
@@ -384,31 +439,43 @@ species RapGuest skills:[fipa, moving] {
 	}
 
 	reflex wander when: (wander = true) {
-		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
+		do goto target:{rnd(25,75),rnd(25,75)}; // go to random point and start wandering
 		do wander;		
 	}
 
 	reflex go_travel when: (travel = true) {
 		if (target = 'bar') {
-			targetPoint <- {15,15}; // Bar location
+			targetPoint <- {0,0}; // Bar location
 			do goto target:targetPoint;
 		} else {
-			targetPoint <- {60,60};	// Concert hall location
+			targetPoint <- {100,100};	// Concert hall location
 			do goto target:targetPoint;
 		}
 	}
 	
 	// This only gets triggered if the agent is at location == target
-    reflex findNeighbor when: (location = targetPoint) {
-		agent neighbor <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		if (neighbor = nil) {
-			if (firstArrival = nil) {
-				// set yourself as firstArrival
-				firstArrival <- index;
+    reflex findNeighbor when: (location = targetPoint) and (travel = true) {
+		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		agent neighbor;
+		write 'I am ' + self.name + ' and my neighbors are: ' + neighbors;
+		loop n over: neighbors {
+			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') {
+				neighbor <- n;
+				write 'I am ' + self.name + ' and my neighbor at ' + target + ' is : ' + neighbor;
+			}
+		}
+		
+		if (length(neighbors) <= 1) {
+			if (target = 'bar') {
+				firstArrivalBar <- self.name;
+			}
+			else {
+				firstArrivalConcertHall <- self.name;
 			}
 		}
 		else { // neighbor is not nil
-			if (firstArrival = index) {
+			write 'I ' + self.name + ' found a neighbor - ' + neighbor;
+			if (firstArrivalBar = self.name) or (firstArrivalConcertHall = self.name) {
 				// start conversation
 				do startConveration;
 			}
@@ -417,40 +484,58 @@ species RapGuest skills:[fipa, moving] {
 	
 	reflex respondToInitiator when:(!empty(requests)) {
 		message requestFromInitiator<-(requests at 0);
-		float initiatorPersonality <- requestFromInitiator.contents;
+		float initiatorPersonality <- requestFromInitiator.contents as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, initiatorPersonality);
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
+			write 'I ' + self.name + ' have responded with my bar personality: ' + barPersonality;
 		} else {
 			// compute mood based on personality received
 			do changeMood(concertHallPersonality, initiatorPersonality);
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
+			write 'I ' + self.name + ' have responded with my concert personality: ' + concertHallPersonality;
 		}
+		self.travel <- false;
+		self.wander <- true;
 	}
 
 	reflex readGuestResponse when: (!(empty(informs))) {
 		message responseFromGuest <- (informs at 0);
-		float guestPersonality <- responseFromGuest.contents;
+		float guestPersonality <- responseFromGuest.contents as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
 		} else {
 			// compute mood based on personality received
 			do changeMood(concertHallPersonality, guestPersonality);
-		}	
+		}
+		self.travel <- false;
+		self.wander <- true;
+		if (target = 'bar') {
+			barMeet <- "mood";
+		} 
+		else {
+			concertMeet <- "mood";
+		}
 	}
 
 
 	// not a reflex because we only want to run it when called
 	action startConveration {
-		agent neighbor <- agents at_distance(1); // find agent at distance of 1
+		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		agent neighbor;
+		loop n over: neighbors {
+			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') {
+				neighbor <- n;
+			}
+		}
 		if (target = 'bar') {
-			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
+			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
 		} else {
-			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
+			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
 		}
 	}
 
@@ -458,10 +543,13 @@ species RapGuest skills:[fipa, moving] {
 		// compute mood based on personality received
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
+			write 'My ' + self.name + ' mood increased by 1: ' + mood;
 		} else if (personality > otherAgentPersonality) {
 			mood <- mood - 1; // guest is lower personality, mood falls
+			write 'My ' + self.name + ' mood decreased by 1: ' + mood;
 		} else {
 			mood <- mood + 2; // guest and I are exact matches, mood rises double
+			write 'My ' + self.name + ' mood increased by 2: ' + mood;
 		}
 	}
 }
@@ -512,31 +600,43 @@ species PopGuest skills:[fipa, moving] {
 	}
 
 	reflex wander when: (wander = true) {
-		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
+		do goto target:{rnd(25,75),rnd(25,75)}; // go to random point and start wandering
 		do wander;		
 	}
 
 	reflex go_travel when: (travel = true) {
 		if (target = 'bar') {
-			targetPoint <- {15,15}; // Bar location
+			targetPoint <- {0,0}; // Bar location
 			do goto target:targetPoint;
 		} else {
-			targetPoint <- {60,60};	// Concert hall location
+			targetPoint <- {100,100};	// Concert hall location
 			do goto target:targetPoint;
 		}
 	}
 	
 	// This only gets triggered if the agent is at location == target
-    reflex findNeighbor when: (location = targetPoint) {
-		agent neighbor <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		if (neighbor = nil) {
-			if (firstArrival = nil) {
-				// set yourself as firstArrival
-				firstArrival <- index;
+    reflex findNeighbor when: (location = targetPoint) and (travel = true) {
+		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		agent neighbor;
+		write 'I am ' + self.name + ' and my neighbors are: ' + neighbors;
+		loop n over: neighbors {
+			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') {
+				neighbor <- n;
+				write 'I am ' + self.name + ' and my neighbor at ' + target + ' is : ' + neighbor;
+			}
+		}
+		
+		if (length(neighbors) <= 1) {
+			if (target = 'bar') {
+				firstArrivalBar <- self.name;
+			}
+			else {
+				firstArrivalConcertHall <- self.name;
 			}
 		}
 		else { // neighbor is not nil
-			if (firstArrival = index) {
+			write 'I ' + self.name + ' found a neighbor - ' + neighbor;
+			if (firstArrivalBar = self.name) or (firstArrivalConcertHall = self.name) {
 				// start conversation
 				do startConveration;
 			}
@@ -545,40 +645,58 @@ species PopGuest skills:[fipa, moving] {
 	
 	reflex respondToInitiator when:(!empty(requests)) {
 		message requestFromInitiator<-(requests at 0);
-		float initiatorPersonality <- requestFromInitiator.contents;
+		float initiatorPersonality <- requestFromInitiator.contents as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, initiatorPersonality);
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
+			write 'I ' + self.name + ' have responded with my bar personality: ' + barPersonality;
 		} else {
 			// compute mood based on personality received
 			do changeMood(concertHallPersonality, initiatorPersonality);
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
+			write 'I ' + self.name + ' have responded with my concert personality: ' + concertHallPersonality;
 		}
+		self.travel <- false;
+		self.wander <- true;
 	}
 
 	reflex readGuestResponse when: (!(empty(informs))) {
 		message responseFromGuest <- (informs at 0);
-		float guestPersonality <- responseFromGuest.contents;
+		float guestPersonality <- responseFromGuest.contents as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
 		} else {
 			// compute mood based on personality received
 			do changeMood(concertHallPersonality, guestPersonality);
-		}	
+		}
+		self.travel <- false;
+		self.wander <- true;
+		if (target = 'bar') {
+			barMeet <- "mood";
+		} 
+		else {
+			concertMeet <- "mood";
+		}
 	}
 
 
 	// not a reflex because we only want to run it when called
 	action startConveration {
-		agent neighbor <- agents at_distance(1); // find agent at distance of 1
+		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		agent neighbor;
+		loop n over: neighbors {
+			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') {
+				neighbor <- n;
+			}
+		}
 		if (target = 'bar') {
-			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
+			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
 		} else {
-			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
+			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
 		}
 	}
 
@@ -586,10 +704,13 @@ species PopGuest skills:[fipa, moving] {
 		// compute mood based on personality received
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
+			write 'My ' + self.name + ' mood increased by 1: ' + mood;
 		} else if (personality > otherAgentPersonality) {
 			mood <- mood - 1; // guest is lower personality, mood falls
+			write 'My ' + self.name + ' mood decreased by 1: ' + mood;
 		} else {
 			mood <- mood + 2; // guest and I are exact matches, mood rises double
+			write 'My ' + self.name + ' mood increased by 2: ' + mood;
 		}
 	}
 }
@@ -627,7 +748,7 @@ species ClassicalGuest skills:[fipa, moving] {
 
 
 	aspect base{
-		rgb agentcolor<- rgb('pink');
+		rgb agentcolor<- rgb('red');
 		draw circle(1) color: agentcolor;
 	}
 	
@@ -641,31 +762,43 @@ species ClassicalGuest skills:[fipa, moving] {
 	}
 
 	reflex wander when: (wander = true) {
-		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
+		do goto target:{rnd(25,75),rnd(25,75)}; // go to random point and start wandering
 		do wander;		
 	}
 
 	reflex go_travel when: (travel = true) {
 		if (target = 'bar') {
-			targetPoint <- {15,15}; // Bar location
+			targetPoint <- {0,0}; // Bar location
 			do goto target:targetPoint;
 		} else {
-			targetPoint <- {60,60};	// Concert hall location
+			targetPoint <- {100,100};	// Concert hall location
 			do goto target:targetPoint;
 		}
 	}
 	
 	// This only gets triggered if the agent is at location == target
-    reflex findNeighbor when: (location = targetPoint) {
-		agent neighbor <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		if (neighbor = nil) {
-			if (firstArrival = nil) {
-				// set yourself as firstArrival
-				firstArrival <- index;
+    reflex findNeighbor when: (location = targetPoint) and (travel = true) {
+		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		agent neighbor;
+		write 'I am ' + self.name + ' and my neighbors are: ' + neighbors;
+		loop n over: neighbors {
+			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') {
+				neighbor <- n;
+				write 'I am ' + self.name + ' and my neighbor at ' + target + ' is : ' + neighbor;
+			}
+		}
+		
+		if (length(neighbors) <= 1) {
+			if (target = 'bar') {
+				firstArrivalBar <- self.name;
+			}
+			else {
+				firstArrivalConcertHall <- self.name;
 			}
 		}
 		else { // neighbor is not nil
-			if (firstArrival = index) {
+			write 'I ' + self.name + ' found a neighbor - ' + neighbor;
+			if (firstArrivalBar = self.name) or (firstArrivalConcertHall = self.name) {
 				// start conversation
 				do startConveration;
 			}
@@ -674,40 +807,58 @@ species ClassicalGuest skills:[fipa, moving] {
 	
 	reflex respondToInitiator when:(!empty(requests)) {
 		message requestFromInitiator<-(requests at 0);
-		float initiatorPersonality <- requestFromInitiator.contents;
+		float initiatorPersonality <- requestFromInitiator.contents as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, initiatorPersonality);
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
+			write 'I ' + self.name + ' have responded with my bar personality: ' + barPersonality;
 		} else {
 			// compute mood based on personality received
 			do changeMood(concertHallPersonality, initiatorPersonality);
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
+			write 'I ' + self.name + ' have responded with my concert personality: ' + concertHallPersonality;
 		}
+		self.travel <- false;
+		self.wander <- true;
 	}
 
 	reflex readGuestResponse when: (!(empty(informs))) {
 		message responseFromGuest <- (informs at 0);
-		float guestPersonality <- responseFromGuest.contents;
+		float guestPersonality <- responseFromGuest.contents as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
 		} else {
 			// compute mood based on personality received
 			do changeMood(concertHallPersonality, guestPersonality);
-		}	
+		}
+		self.travel <- false;
+		self.wander <- true;
+		if (target = 'bar') {
+			barMeet <- "mood";
+		} 
+		else {
+			concertMeet <- "mood";
+		}
 	}
 
 
 	// not a reflex because we only want to run it when called
 	action startConveration {
-		agent neighbor <- agents at_distance(1); // find agent at distance of 1
+		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		agent neighbor;
+		loop n over: neighbors {
+			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') {
+				neighbor <- n;
+			}
+		}
 		if (target = 'bar') {
-			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
+			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
 		} else {
-			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
+			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
 		}
 	}
 
@@ -715,10 +866,13 @@ species ClassicalGuest skills:[fipa, moving] {
 		// compute mood based on personality received
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
+			write 'My ' + self.name + ' mood increased by 1: ' + mood;
 		} else if (personality > otherAgentPersonality) {
 			mood <- mood - 1; // guest is lower personality, mood falls
+			write 'My ' + self.name + ' mood decreased by 1: ' + mood;
 		} else {
 			mood <- mood + 2; // guest and I are exact matches, mood rises double
+			write 'My ' + self.name + ' mood increased by 2: ' + mood;
 		}
 	}
 }
@@ -769,31 +923,44 @@ species IndieGuest skills:[fipa, moving] {
 	}
 
 	reflex wander when: (wander = true) {
-		//do goto target:{rnd(0,100),rnd(0,100)}; // go to random point and start wandering
+		do goto target:{rnd(25,75),rnd(25,75)}; // go to random point and start wandering
 		do wander;		
 	}
 
 	reflex go_travel when: (travel = true) {
 		if (target = 'bar') {
-			targetPoint <- {15,15}; // Bar location
+			targetPoint <- {0,0}; // Bar location
 			do goto target:targetPoint;
 		} else {
-			targetPoint <- {60,60};	// Concert hall location
+			targetPoint <- {100,100};	// Concert hall location
 			do goto target:targetPoint;
 		}
 	}
 	
 	// This only gets triggered if the agent is at location == target
-    reflex findNeighbor when: (location = targetPoint) {
-		agent neighbor <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		if (neighbor = nil) {
-			if (firstArrival = nil) {
-				// set yourself as firstArrival
-				firstArrival <- index;
+    reflex findNeighbor when: (location = targetPoint) and (travel = true) {
+		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		agent neighbor;
+		write 'I am ' + self.name + ' and my neighbors are: ' + neighbors;
+		loop n over: neighbors {
+			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') {
+				neighbor <- n;
+				write 'I am ' + self.name + ' and my neighbor at ' + target + ' is : ' + neighbor;
+			}
+		}
+		
+		if (length(neighbors) <= 1) {
+			if (target = 'bar') {
+				firstArrivalBar <- self.name;
+			}
+			else {
+				firstArrivalConcertHall <- self.name;
+				write "I am first arrival at concert: " + firstArrivalConcertHall;
 			}
 		}
 		else { // neighbor is not nil
-			if (firstArrival = index) {
+			write 'I ' + self.name + ' found a neighbor - ' + neighbor;
+			if (firstArrivalBar = self.name) or (firstArrivalConcertHall = self.name) {
 				// start conversation
 				do startConveration;
 			}
@@ -802,40 +969,58 @@ species IndieGuest skills:[fipa, moving] {
 	
 	reflex respondToInitiator when:(!empty(requests)) {
 		message requestFromInitiator<-(requests at 0);
-		float initiatorPersonality <- requestFromInitiator.contents;
+		float initiatorPersonality <- requestFromInitiator.contents as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, initiatorPersonality);
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
+			write 'I ' + self.name + ' have responded with my bar personality: ' + barPersonality;
 		} else {
 			// compute mood based on personality received
 			do changeMood(concertHallPersonality, initiatorPersonality);
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
+			write 'I ' + self.name + ' have responded with my concert personality: ' + concertHallPersonality;
 		}
+		self.travel <- false;
+		self.wander <- true;
 	}
 
 	reflex readGuestResponse when: (!(empty(informs))) {
 		message responseFromGuest <- (informs at 0);
-		float guestPersonality <- responseFromGuest.contents;
+		float guestPersonality <- responseFromGuest.contents as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
 		} else {
 			// compute mood based on personality received
 			do changeMood(concertHallPersonality, guestPersonality);
-		}	
+		}
+		self.travel <- false;
+		self.wander <- true;
+		if (target = 'bar') {
+			barMeet <- "mood";
+		} 
+		else {
+			concertMeet <- "mood";
+		}
 	}
 
 
 	// not a reflex because we only want to run it when called
 	action startConveration {
-		agent neighbor <- agents at_distance(1); // find agent at distance of 1
+		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
+		agent neighbor;
+		loop n over: neighbors {
+			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') {
+				neighbor <- n;
+			}
+		}
 		if (target = 'bar') {
-			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
+			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
 		} else {
-			do start_conversation (to::list(agent),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
+			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);	
 		}
 	}
 
@@ -843,24 +1028,27 @@ species IndieGuest skills:[fipa, moving] {
 		// compute mood based on personality received
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
+			write 'My ' + self.name + ' mood increased by 1: ' + mood;
 		} else if (personality > otherAgentPersonality) {
 			mood <- mood - 1; // guest is lower personality, mood falls
+			write 'My ' + self.name + ' mood decreased by 1: ' + mood;
 		} else {
 			mood <- mood + 2; // guest and I are exact matches, mood rises double
+			write 'My ' + self.name + ' mood increased by 2: ' + mood;
 		}
 	}
 }
 
 species Bar{
 	aspect base{
-		draw rectangle(7,4) at: location color: #yellow;
+		//draw rectangle(7,4) at: location color: #yellow;
 	}
 }
 
 
 species ConcertHall{
 	aspect base{
-		draw rectangle(7,4) at: location color: #green;
+		//draw rectangle(7,4) at: location color: #green;
 	}
 }
 
