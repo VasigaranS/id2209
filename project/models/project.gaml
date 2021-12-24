@@ -76,7 +76,7 @@ species DestinyAgent  {
 
 		genre2<-rnd(0,4);
 		f2<-rnd(0,noAgents-1);
-
+	
 		// We only need to change index when the genre type is the exact same
 		// ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
 		if (genre1 = genre2) {
@@ -90,8 +90,8 @@ species DestinyAgent  {
 
 		//first meeting
 		write 'Sending ' + genreList[genre1] + f1 + ' to meet ' + genreList[genre2] + f2 + ' at the bar';
-		do asktomeet(genreList[genre1],f1,'bar');
-		do asktomeet(genreList[genre2],f2,'bar');
+		do asktomeet(genreList[genre1],f1,'bar', 1.0);
+		do asktomeet(genreList[genre2],f2,'bar', 0.8);
 
 		barMeet<-"false";
 	}
@@ -122,18 +122,19 @@ species DestinyAgent  {
 
 		//second meeting
 		write 'Sending ' + genreList[genre3] + f3 + ' to meet ' + genreList[genre4] + f4 + ' at the concert hall';
-		do asktomeet(genreList[genre3],f3,'concerthall');
-		do asktomeet(genreList[genre4],f4,'concerthall');
+		do asktomeet(genreList[genre3],f3,'concerthall', 1.0);
+		do asktomeet(genreList[genre4],f4,'concerthall', 0.8);
 
 		concertMeet<-"false";
 	}
 
-	action asktomeet(string genre,int f,string t){
+	action asktomeet(string genre,int f,string t, float movingSpeed){
 		if(genre='RockGuest') {
 			ask RockGuest[f] {
 				self.travel<-true;
 				self.wander<-false;
 				self.target<-t;
+				self.speed<-movingSpeed;
 			}
 		}
 		else if(genre='RapGuest') {	
@@ -141,6 +142,7 @@ species DestinyAgent  {
 				self.travel<-true;
 				self.wander<-false;
 				self.target<-t;
+				self.speed<-movingSpeed;
 			}
 		}
 		else if(genre='PopGuest') {
@@ -148,6 +150,7 @@ species DestinyAgent  {
 				self.travel<-true;
 				self.wander<-false;
 				self.target<-t;
+				self.speed<-movingSpeed;
 			}
 		}
 		else if(genre='ClassicalGuest') {	
@@ -155,6 +158,7 @@ species DestinyAgent  {
 				self.travel<-true;
 				self.wander<-false;
 				self.target<-t;
+				self.speed<-movingSpeed;
 			}
 		}
 		else if(genre='IndieGuest') {	
@@ -162,6 +166,7 @@ species DestinyAgent  {
 				self.travel<-true;
 				self.wander<-false;
 				self.target<-t;
+				self.speed<-movingSpeed;
 			}
 		}
 	}
@@ -233,7 +238,8 @@ species RockGuest skills:[fipa, moving] {
 	}
 
 	reflex wander when: (wander = true) {
-		list<point> clusters <- [{15,15}, {25,25}, {50,50}, {75,75}];
+		self.speed<-1.0;
+		list<point> clusters <- [{25,50}, {50,25}, {50,50}, {75,75}];
 		point cluster <- clusters[rnd(0,3)];
 		do goto target:cluster; // go to random cluster and start wandering
 		do wander;		
