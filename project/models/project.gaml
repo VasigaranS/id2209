@@ -18,6 +18,7 @@ global {
 	string concertMeet<-"true";
 	int noAgents<-5;
 	float globalMood;
+	list<string> BusyAgents<-['-1','-1','-1','-1'];
 	int globalCycles;	// Total number of interactions (globalMood is computed after each interaction)
 	init{
 	
@@ -70,20 +71,44 @@ species DestinyAgent  {
 	list<string> genreList <- ['RockGuest','RapGuest','PopGuest','ClassicalGuest','IndieGuest'];
 
 	reflex arrangeBarMeeting when: (barMeet="true"){
+		string f1name;
+		string f2name;
+		BusyAgents[0]<-'-1';
+		BusyAgents[1]<-'-1';
 
 		genre1<-rnd(0,4);
 		f1<-rnd(0,noAgents-1);
+		f1name<-genreList[genre1]+f1;
+		loop while:(BusyAgents contains f1name){
+			f1<-rnd(0,noAgents-1);
+			f1name<-genreList[genre1]+f1;
+		}
+		
 
 		genre2<-rnd(0,4);
 		f2<-rnd(0,noAgents-1);
+		f2name<-genreList[genre2]+f2;
+		
+		loop while:(BusyAgents contains f2name){
+			f2<-rnd(0,noAgents-1);
+			f2name<-genreList[genre2]+f2;
+		}
 	
 		// We only need to change index when the genre type is the exact same
 		// ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
 		if (genre1 = genre2) {
-		loop while: (f2=f1){
+		loop while: (f2=f1 or BusyAgents contains f2name){
+			
 			f2<-rnd(0,noAgents-1);
+			f2name<-genreList[genre2]+f2;
 			}
 		}
+		
+		
+		BusyAgents[0]<-f1name;
+		BusyAgents[1]<-f2name;
+		write(BusyAgents);
+		
 
 		// reset firstArrival
 		firstArrivalBar <- nil;
@@ -97,25 +122,49 @@ species DestinyAgent  {
 	}
 
 	reflex arrangeConcertMeeting when: (concertMeet="true"){
+		
+		string f3name;
+		string f4name;
+		
+		BusyAgents[2]<-'-1';
+		BusyAgents[3]<-'-1';
 				
 		genre3<-rnd(0,4);
 		f3<-rnd(0,noAgents-1);
+		f3name<-genreList[genre3]+f3;
+		
+		loop while:(BusyAgents contains f3name){
+			f3<-rnd(0,noAgents-1);
+			f3name<-genreList[genre3]+f3;
+		}
 
 		genre4<-rnd(0,4);
 		f4<-rnd(0,noAgents-1);
+		f4name<-genreList[genre4]+f4;
+		
+		loop while:(BusyAgents contains f4name){
+			f4<-rnd(0,noAgents-1);
+			f4name<-genreList[genre4]+f4;
+		}
 
 		// We only need to change index when the genre type is the exact same
 		// ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
 		if (genre1 = genre3 or genre1 = genre4 or genre2 = genre3 or genre2 = genre4 or genre3 = genre4) {
-			loop while: (f3=f1) or (f3=f2) {
+			loop while: (f3=f1) or (f3=f2) or BusyAgents contains f3name {
 				write 'stuck in loop f3';
 				f3<-rnd(0,noAgents-1);
+				f3name<-genreList[genre3]+f3;
 			}
-			loop while: (f4=f1) or (f4=f2) or (f4=f3) {
+			loop while: (f4=f1) or (f4=f2) or (f4=f3)  or BusyAgents contains f4name {
 				write 'stuck in loop f4';
 				f4<-rnd(0,noAgents-1);
+				f4name<-genreList[genre4]+f4;
 			}
 		}
+		
+		BusyAgents[2]<-f3name;
+		BusyAgents[3]<-f4name;
+		write(BusyAgents);
 
 		// reset firstArrival
 		firstArrivalConcertHall <- nil;
@@ -291,6 +340,9 @@ species RockGuest skills:[fipa, moving] {
 		write 'I ' + self.name + ' have received a conversation from someone!';
 		message requestFromInitiator<-(requests at 0);
 		float initiatorPersonality <- requestFromInitiator.contents as float;
+		list fl<-requestFromInitiator.contents;
+		//write(fl[0]);
+		initiatorPersonality<-fl[0] as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, initiatorPersonality);
@@ -312,6 +364,11 @@ species RockGuest skills:[fipa, moving] {
 		message responseFromGuest <- (informs at 0);
 		write 'I ' + self.name + ' have received a response from the guest';
 		float guestPersonality <- responseFromGuest.contents as float;
+		//write('contents '+ responseFromGuest.contents);
+		list fl<-responseFromGuest.contents;
+		//write(fl[0]);
+		guestPersonality<-fl[0] as float;
+		//write('guestPersonality '+guestPersonality);
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
@@ -349,6 +406,9 @@ species RockGuest skills:[fipa, moving] {
 	}
 
 	action changeMood (float personality, float otherAgentPersonality) {
+		write('personality '+personality);
+		write('otherAgentPersonality '+otherAgentPersonality);
+		
 		// compute mood based on personality received
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
@@ -452,6 +512,9 @@ species RapGuest skills:[fipa, moving] {
 	reflex respondToInitiator when:(!empty(requests)) {
 		message requestFromInitiator<-(requests at 0);
 		float initiatorPersonality <- requestFromInitiator.contents as float;
+		list fl<-requestFromInitiator.contents;
+		//write(fl[0]);
+		initiatorPersonality<-fl[0] as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, initiatorPersonality);
@@ -472,6 +535,12 @@ species RapGuest skills:[fipa, moving] {
 	reflex readGuestResponse when: (!(empty(informs))) {
 		message responseFromGuest <- (informs at 0);
 		float guestPersonality <- responseFromGuest.contents as float;
+		//write('contents '+ responseFromGuest.contents);
+		list fl<-responseFromGuest.contents;
+		//write(fl[0]);
+		guestPersonality<-fl[0] as float;
+		//write('guestPersonality '+guestPersonality);
+		
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
@@ -508,6 +577,8 @@ species RapGuest skills:[fipa, moving] {
 
 	action changeMood (float personality, float otherAgentPersonality) {
 		// compute mood based on personality received
+		write('personality '+personality);
+		write('otherAgentPersonality '+otherAgentPersonality);
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
 			write 'My ' + self.name + ' mood increased by 1: ' + mood;
@@ -610,6 +681,9 @@ species PopGuest skills:[fipa, moving] {
 	reflex respondToInitiator when:(!empty(requests)) {
 		message requestFromInitiator<-(requests at 0);
 		float initiatorPersonality <- requestFromInitiator.contents as float;
+		list fl<-requestFromInitiator.contents;
+		//write(fl[0]);
+		initiatorPersonality<-fl[0] as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, initiatorPersonality);
@@ -630,6 +704,11 @@ species PopGuest skills:[fipa, moving] {
 	reflex readGuestResponse when: (!(empty(informs))) {
 		message responseFromGuest <- (informs at 0);
 		float guestPersonality <- responseFromGuest.contents as float;
+		//write('contents '+ responseFromGuest.contents);
+		list fl<-responseFromGuest.contents;
+		//write(fl[0]);
+		guestPersonality<-fl[0] as float;
+		//write('guestPersonality '+guestPersonality);
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
@@ -666,6 +745,8 @@ species PopGuest skills:[fipa, moving] {
 
 	action changeMood (float personality, float otherAgentPersonality) {
 		// compute mood based on personality received
+		write('personality '+personality);
+		write('otherAgentPersonality '+otherAgentPersonality);
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
 			write 'My ' + self.name + ' mood increased by 1: ' + mood;
@@ -769,6 +850,9 @@ species ClassicalGuest skills:[fipa, moving] {
 	reflex respondToInitiator when:(!empty(requests)) {
 		message requestFromInitiator<-(requests at 0);
 		float initiatorPersonality <- requestFromInitiator.contents as float;
+		list fl<-requestFromInitiator.contents;
+		//write(fl[0]);
+		initiatorPersonality<-fl[0] as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, initiatorPersonality);
@@ -789,6 +873,11 @@ species ClassicalGuest skills:[fipa, moving] {
 	reflex readGuestResponse when: (!(empty(informs))) {
 		message responseFromGuest <- (informs at 0);
 		float guestPersonality <- responseFromGuest.contents as float;
+		//write('contents '+ responseFromGuest.contents);
+		list fl<-responseFromGuest.contents;
+		//write(fl[0]);
+		guestPersonality<-fl[0] as float;
+		//write('guestPersonality '+guestPersonality);
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
@@ -825,6 +914,8 @@ species ClassicalGuest skills:[fipa, moving] {
 
 	action changeMood (float personality, float otherAgentPersonality) {
 		// compute mood based on personality received
+		write('personality '+personality);
+		write('otherAgentPersonality '+otherAgentPersonality);
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
 			write 'My ' + self.name + ' mood increased by 1: ' + mood;
@@ -928,6 +1019,10 @@ species IndieGuest skills:[fipa, moving] {
 	reflex respondToInitiator when:(!empty(requests)) {
 		message requestFromInitiator<-(requests at 0);
 		float initiatorPersonality <- requestFromInitiator.contents as float;
+		list fl<-requestFromInitiator.contents;
+		//write(fl[0]);
+		initiatorPersonality<-fl[0] as float;
+		
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, initiatorPersonality);
@@ -947,7 +1042,14 @@ species IndieGuest skills:[fipa, moving] {
 
 	reflex readGuestResponse when: (!(empty(informs))) {
 		message responseFromGuest <- (informs at 0);
+		
+		
 		float guestPersonality <- responseFromGuest.contents as float;
+		//write('contents '+ responseFromGuest.contents);
+		list fl<-responseFromGuest.contents;
+		//write(fl[0]);
+		guestPersonality<-fl[0] as float;
+		//write('guestPersonality '+guestPersonality);
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
@@ -984,6 +1086,8 @@ species IndieGuest skills:[fipa, moving] {
 
 	action changeMood (float personality, float otherAgentPersonality) {
 		// compute mood based on personality received
+		write('personality '+personality);
+		write('otherAgentPersonality '+otherAgentPersonality);
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
 			write 'My ' + self.name + ' mood increased by 1: ' + mood;
