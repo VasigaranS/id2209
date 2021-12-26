@@ -67,9 +67,22 @@ species DestinyAgent  {
 	int f3;
 	int genre4;
 	int f4;
+	int timer;
 
 	list<string> genreList <- ['RockGuest','RapGuest','PopGuest','ClassicalGuest','IndieGuest'];
 
+	reflex timer when: (barMeet = "false" or barMeet = "mood" or concertMeet = "false" or concertMeet = "mood") {
+		// Sets a timeout for each interaction
+		timer <- timer + 1;
+		if (timer = 250) {
+			timer <- 0;
+			barMeet <- "true";
+			concertMeet <- "true";
+			BusyAgents<-['-1','-1','-1','-1'];
+		}
+		
+	}
+	
 	reflex arrangeBarMeeting when: (barMeet="true"){
 		string f1name;
 		string f2name;
@@ -286,7 +299,7 @@ species RockGuest skills:[fipa, moving] {
 		draw circle(1) color: agentcolor;
 	}
 
-	reflex wander when: (wander = true) {
+	reflex wander when: (wander = true) or !(BusyAgents contains self.name) {
 		self.speed<-1.0;
 		list<point> clusters <- [{25,50}, {50,25}, {50,50}, {75,75}];
 		point cluster <- clusters[rnd(0,3)];
@@ -463,7 +476,7 @@ species RapGuest skills:[fipa, moving] {
 		index<-num;
 	}
 
-	reflex wander when: (wander = true) {
+	reflex wander when: (wander = true) or !(BusyAgents contains self.name) {
 		list<point> clusters <- [{15,15}, {25,25}, {50,50}, {75,75}];
 		point cluster <- clusters[rnd(0,3)];
 		do goto target:cluster; // go to random cluster and start wandering
@@ -632,7 +645,7 @@ species PopGuest skills:[fipa, moving] {
 		index<-num;
 	}
 
-	reflex wander when: (wander = true) {
+	reflex wander when: (wander = true) or !(BusyAgents contains self.name) {
 		list<point> clusters <- [{15,15}, {25,25}, {50,50}, {75,75}];
 		point cluster <- clusters[rnd(0,3)];
 		do goto target:cluster; // go to random cluster and start wandering
@@ -801,7 +814,7 @@ species ClassicalGuest skills:[fipa, moving] {
 		index<-num;
 	}
 
-	reflex wander when: (wander = true) {
+	reflex wander when: (wander = true) or !(BusyAgents contains self.name) {
 		list<point> clusters <- [{15,15}, {25,25}, {50,50}, {75,75}];
 		point cluster <- clusters[rnd(0,3)];
 		do goto target:cluster; // go to random cluster and start wandering
@@ -969,7 +982,7 @@ species IndieGuest skills:[fipa, moving] {
 		index<-num;
 	}
 
-	reflex wander when: (wander = true) {
+	reflex wander when: (wander = true) or !(BusyAgents contains self.name) {
 		list<point> clusters <- [{15,15}, {25,25}, {50,50}, {75,75}];
 		point cluster <- clusters[rnd(0,3)];
 		do goto target:cluster; // go to random cluster and start wandering
@@ -1103,14 +1116,14 @@ species IndieGuest skills:[fipa, moving] {
 
 species Bar{
 	aspect base{
-		draw rectangle(7,4) at: location color: #blue;
+	//	draw rectangle(7,4) at: location color: #blue;
 	}
 }
 
 
 species ConcertHall{
 	aspect base{
-		draw rectangle(7,4) at: location color: #green;
+		//draw rectangle(7,4) at: location color: #green;
 	}
 }
 
