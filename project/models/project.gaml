@@ -299,6 +299,7 @@ species DestinyAgent  {
 
 	reflex computeGlobalMood when: (barMeet = "mood" or concertMeet = "mood" or virtualMeet = "mood"){
 		globalCycles <- globalCycles + 1; // keeps overall counter of global mood computations in order to get average
+		write 'initial global mood ------ ' + globalMood;
 		loop genre over: genreList {
 			loop i from:0 to:noAgents-1 {
 				if (genre = "RockGuest") {
@@ -488,13 +489,13 @@ species RockGuest skills:[fipa, moving] {
 		}
 		if (target = 'bar') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the bar';
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the bar';
 		} else if (target = 'concerthall') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the concert hall';	
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the concert hall';	
 		} else {
 			do start_conversation (to::list(neighbor), protocol::'fipa-contract-net',performative::'request',contents::[virtualHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the virtual hall';
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the virtual hall';
 		}
 	}
 
@@ -678,13 +679,13 @@ species RapGuest skills:[fipa, moving] {
 		}
 		if (target = 'bar') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the bar';
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the bar';
 		} else if (target = 'concerthall') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the concert hall';		
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the concert hall';		
 		} else {
 			do start_conversation (to::list(neighbor), protocol::'fipa-contract-net',performative::'request',contents::[virtualHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the virtual hall';
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the virtual hall';
 		}
 	}
 
@@ -866,13 +867,13 @@ species PopGuest skills:[fipa, moving] {
 		}
 		if (target = 'bar') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the bar';
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the bar';
 		} else if (target = 'concerthall') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the concert hall';		
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the concert hall';		
 		} else {
 			do start_conversation (to::list(neighbor), protocol::'fipa-contract-net',performative::'request',contents::[virtualHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the virtual hall';
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the virtual hall';
 		}
 	}
 
@@ -1055,13 +1056,13 @@ species ClassicalGuest skills:[fipa, moving] {
 		}
 		if (target = 'bar') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the bar';
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the bar';
 		} else if (target = 'concerthall') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the concert hall';		
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the concert hall';		
 		} else {
 			do start_conversation (to::list(neighbor), protocol::'fipa-contract-net',performative::'request',contents::[virtualHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the virtual hall';
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the virtual hall';
 		}
 	}
 
@@ -1244,13 +1245,13 @@ species IndieGuest skills:[fipa, moving] {
 		}
 		if (target = 'bar') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the bar';
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the bar';
 		} else if (target = 'concerthall') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the concert hall';		
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the concert hall';		
 		} else {
 			do start_conversation (to::list(neighbor), protocol::'fipa-contract-net',performative::'request',contents::[virtualHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + agent + ' at the virtual hall';
+			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the virtual hall';
 		}
 	}
 
@@ -1277,7 +1278,6 @@ species Bar{
 	}
 }
 
-
 species ConcertHall{
 	aspect base{
 		draw rectangle(7,4) at: location color: #green;
@@ -1292,7 +1292,7 @@ species VirtualHall{
 
 experiment name type: gui {
 	output {
-		display mydisplay type: opengl {
+		display modelSimulation type: opengl {
 			species RockGuest aspect:base;
 			species RapGuest aspect:base;
 			species PopGuest aspect:base;
@@ -1301,6 +1301,12 @@ experiment name type: gui {
 			species Bar aspect:base;
 			species ConcertHall aspect:base;
 			species VirtualHall aspect:base;
+		}
+		display simulationChart {
+			chart "global_mood" type: series {
+    			data "GlobalMood" value: globalMood color: #red;
+//       		 	data "TotalInteractions" value: globalCycles color: #blue;
+        	}
 		}
 	}
 }
