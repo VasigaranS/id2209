@@ -20,11 +20,13 @@ global {
 	string virtualMeet<-"true";
 	int noAgents<-20;
 	float globalMood;
+	float averageGlobalMood;
 	list<string> BusyAgents<-['-1','-1','-1','-1','-1','-1'];
 	int globalCycles;	// Total number of interactions (globalMood is computed after each interaction)
 	init{
 	
-		globalMood <- 0.0; 
+		globalMood <- 0.0;
+		averageGlobalMood <- 0.0; 
 		globalCycles <- 0;
 		
 		create Bar with:(location:point (0,0));
@@ -128,14 +130,12 @@ species DestinyAgent  {
 		
 		BusyAgents[0]<-f1name;
 		BusyAgents[1]<-f2name;
-		write(BusyAgents);
 		
 
 		// reset firstArrival
 		firstArrivalBar <- nil;
 
 		//first meeting
-		write 'Sending ' + genreList[genre1] + f1 + ' to meet ' + genreList[genre2] + f2 + ' at the bar';
 		do asktomeet(genreList[genre1],f1,'bar', 1.0);
 		do asktomeet(genreList[genre2],f2,'bar', 0.8);
 
@@ -172,12 +172,10 @@ species DestinyAgent  {
 		// ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
 		if (genre1 = genre3 or genre1 = genre4 or genre2 = genre3 or genre2 = genre4 or genre3 = genre4) {
 			loop while: (f3=f1) or (f3=f2) or BusyAgents contains f3name {
-				write 'Waiting to find a non-busy agent';
 				f3<-rnd(0,noAgents-1);
 				f3name<-genreList[genre3]+f3;
 			}
 			loop while: (f4=f1) or (f4=f2) or (f4=f3)  or BusyAgents contains f4name {
-				write 'Waiting to find a non-busy agent';
 				f4<-rnd(0,noAgents-1);
 				f4name<-genreList[genre4]+f4;
 			}
@@ -185,13 +183,11 @@ species DestinyAgent  {
 		
 		BusyAgents[2]<-f3name;
 		BusyAgents[3]<-f4name;
-		write(BusyAgents);
 
 		// reset firstArrival
 		firstArrivalConcertHall <- nil;
 
 		//second meeting
-		write 'Sending ' + genreList[genre3] + f3 + ' to meet ' + genreList[genre4] + f4 + ' at the concert hall';
 		do asktomeet(genreList[genre3],f3,'concerthall', 1.0);
 		do asktomeet(genreList[genre4],f4,'concerthall', 0.8);
 
@@ -228,12 +224,10 @@ species DestinyAgent  {
 		// ex: RockGuest0 (agent1) and RockGuest0 (agent3). PopGuest0 (agent1) and RockGuest0 (agent3) is ok
 		if (genre1 = genre5 or genre1 = genre6 or genre2 = genre5 or genre2 = genre6 or genre5 = genre6) {
 			loop while: (f5=f1) or (f5=f2) or (f5=f3) or (f5=f4) or BusyAgents contains f5name {
-				write 'Waiting to find a non-busy agent';
 				f5<-rnd(0,noAgents-1);
 				f5name<-genreList[genre5]+f5;
 			}
 			loop while: (f6=f1) or (f6=f2) or (f6=f3) or (f6=f4) or (f6=f5) or BusyAgents contains f6name {
-				write 'Waiting to find a non-busy agent';
 				f6<-rnd(0,noAgents-1);
 				f6name<-genreList[genre6]+f6;
 			}
@@ -241,13 +235,11 @@ species DestinyAgent  {
 		
 		BusyAgents[4]<-f5name;
 		BusyAgents[5]<-f6name;
-		write(BusyAgents);
 
 		// reset firstArrival
 		firstArrivalVirtualHall <- nil;
 
 		//second meeting
-		write 'Sending ' + genreList[genre5] + f5 + ' to meet ' + genreList[genre6] + f6 + ' at the virtual meet';
 		do asktomeet(genreList[genre5],f5,'virtual', 1.0);
 		do asktomeet(genreList[genre6],f6,'virtual', 0.8);
 
@@ -299,27 +291,8 @@ species DestinyAgent  {
 
 	reflex computeGlobalMood when: (barMeet = "mood" or concertMeet = "mood" or virtualMeet = "mood"){
 		globalCycles <- globalCycles + 1; // keeps overall counter of global mood computations in order to get average
-		write 'initial global mood ------ ' + globalMood;
-		loop genre over: genreList {
-			loop i from:0 to:noAgents-1 {
-				if (genre = "RockGuest") {
-					globalMood <- ((globalMood + RockGuest[i].mood) / globalCycles);
-				}
-				if (genre = "RapGuest") {
-					globalMood <- ((globalMood + RapGuest[i].mood) / globalCycles);
-				}
-				if (genre = "PopGuest") {
-					globalMood <- ((globalMood + PopGuest[i].mood) / globalCycles);
-				}
-				if (genre = "ClassicalGuest") {
-					globalMood <- ((globalMood + ClassicalGuest[i].mood) / globalCycles);
-				}
-				if (genre = "IndieGuest") {
-					globalMood <- ((globalMood + IndieGuest[i].mood) / globalCycles);
-				}
-			}
-		}
-		write 'Global Mood ------ ' + globalMood;
+		float averageGlobalMood <- globalMood / globalCycles;
+		write 'Average global mood after interaction ' + globalCycles + ': ' + averageGlobalMood;
 		if (barMeet = "mood") {
 			barMeet <- "true";
 		}
@@ -392,7 +365,6 @@ species GuestAgent skills:[fipa, moving] {
 		loop n over: neighbors {
 			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') and (n.name != 'VirtualHall0') {
 				neighbor <- n;
-				write 'I am ' + self.name + ' and my neighbor at ' + target + ' is : ' + neighbor;
 			}
 		}
 		
@@ -419,7 +391,7 @@ species GuestAgent skills:[fipa, moving] {
 		message requestFromInitiator<-(requests at 0);
 		float initiatorPersonality <- requestFromInitiator.contents as float;
 		list fl<-requestFromInitiator.contents;
-		//write(fl[0]);
+	
 		initiatorPersonality<-fl[0] as float;
 		if (target = 'bar') {
 			// compute mood based on personality received
@@ -437,19 +409,19 @@ species GuestAgent skills:[fipa, moving] {
 			// respond with your own personality
 			do inform with: (message: requestFromInitiator, contents: [virtualHallPersonality]);
 		}
+		globalMood <- globalMood + self.mood;
 		self.travel <- false;
 		self.wander <- true;
 	}
 
 	reflex readGuestResponse when: (!(empty(informs))) {
 		message responseFromGuest <- (informs at 0);
-		write 'I ' + self.name + ' have received a response from the guest';
 		float guestPersonality <- responseFromGuest.contents as float;
-		//write('contents '+ responseFromGuest.contents);
+	
 		list fl<-responseFromGuest.contents;
-		//write(fl[0]);
+	
 		guestPersonality<-fl[0] as float;
-		//write('guestPersonality '+guestPersonality);
+	
 		if (target = 'bar') {
 			// compute mood based on personality received
 			do changeMood(barPersonality, guestPersonality);
@@ -459,6 +431,7 @@ species GuestAgent skills:[fipa, moving] {
 		} else {
 			do changeMood(virtualHallPersonality, guestPersonality);
 		}
+		globalMood <- globalMood + self.mood;
 		self.travel <- false;
 		self.wander <- true;
 		if (target = 'bar') {
@@ -484,30 +457,22 @@ species GuestAgent skills:[fipa, moving] {
 		}
 		if (target = 'bar') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the bar';
 		} else if (target = 'concerthall') {
 			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the concert hall';	
 		} else {
 			do start_conversation (to::list(neighbor), protocol::'fipa-contract-net',performative::'request',contents::[virtualHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the virtual hall';
 		}
 	}
 
 	action changeMood (float personality, float otherAgentPersonality) {
-		write('personality '+personality);
-		write('otherAgentPersonality '+otherAgentPersonality);
 		
 		// compute mood based on personality received
 		if (personality < otherAgentPersonality) {
 			mood <- mood + 1; // guest is greater personality, mood rises
-			write 'My ' + self.name + ' mood increased by 1: ' + mood;
 		} else if (personality > otherAgentPersonality) {
 			mood <- mood - 1; // guest is lower personality, mood falls
-			write 'My ' + self.name + ' mood decreased by 1: ' + mood;
 		} else {
 			mood <- mood + 2; // guest and I are exact matches, mood rises double
-			write 'My ' + self.name + ' mood increased by 2: ' + mood;
 		}
 	}
 	
@@ -655,7 +620,7 @@ experiment name type: gui {
 		}
 		display simulationChart {
 			chart "global_mood" type: series {
-    			data "GlobalMood" value: globalMood color: #red;
+    			data "GlobalMood" value: averageGlobalMood color: #red;
 //       		 	data "TotalInteractions" value: globalCycles color: #blue;
         	}
 		}
