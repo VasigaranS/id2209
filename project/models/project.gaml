@@ -332,8 +332,8 @@ species DestinyAgent  {
 	}
 }
 
-species RockGuest skills:[fipa, moving] {
-	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
+species GuestAgent skills:[fipa, moving] {
+	bool wander <- true;
 	bool travel <- false;
 	string target <- nil;
 	point targetPoint <- nil;
@@ -364,17 +364,12 @@ species RockGuest skills:[fipa, moving] {
 		virtualHallPersonality <- myPersonality-2.5;
 	}
 
-	aspect base {
-		rgb agentcolor<- rgb('purple');
-		draw circle(1) color: agentcolor;
-	}
-
 	reflex wander when: (wander = true) or !(BusyAgents contains self.name) {
 		self.speed<-1.0;
 		list<point> clusters <-[{10,90}, {25,25}, {65,65}];
 		point cluster <- clusters[rnd(0,2)];
 		do goto target:cluster; // go to random cluster and start wandering
-		do wander;		
+		do wander;
 	}	
 
 	reflex go_travel when: (travel = true) {
@@ -515,27 +510,33 @@ species RockGuest skills:[fipa, moving] {
 			write 'My ' + self.name + ' mood increased by 2: ' + mood;
 		}
 	}
+	
 }
 
-species RapGuest skills:[fipa, moving] {
+species RockGuest parent: GuestAgent skills:[fipa, moving] {
+		
+	init {
+		talkative <- rnd(0,10.0);
+		creative <- rnd(0,10.0);
+		shy <- rnd(0,10.0);
+		adventure <- rnd(0,10.0);
+		emotional <- rnd(0,10.0);
+		mood <- rnd(0,10); // start with a random mood
+        // weighted personalities based on what attributes they like more
+		myPersonality <- (talkative * 1) + (creative * 0.75) + (shy * 0) + (adventure * 0.5) + (emotional * 0.25);
+        barPersonality <- myPersonality+5.0;    // +/- 0, ie no change in personality
+        concertHallPersonality <- myPersonality-5.0;
+		virtualHallPersonality <- myPersonality-2.5;
+	}
 
-	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
-	bool travel <- false;
-	string target <- nil;
-	point targetPoint <- nil;
-	int index;
-	
-	int mood;
-	float talkative;
-	float creative;
-	float shy;
-	float adventure;
-	float emotional;
-	float myPersonality;
-    float barPersonality;
-    float concertHallPersonality;
-	float virtualHallPersonality;
-	
+	aspect base {
+		rgb agentcolor<- rgb('purple');
+		draw circle(1) color: agentcolor;
+	}
+}
+
+species RapGuest parent: GuestAgent skills:[fipa, moving] {
+
 	init {
 		talkative <- rnd(0,10.0);
 		creative <- rnd(0,10.0);
@@ -554,176 +555,9 @@ species RapGuest skills:[fipa, moving] {
 		rgb agentcolor<- rgb('orange');
 		draw circle(1) color: agentcolor;
 	}
-	
-	action setIndex(int num){
-		index<-num;
-	}
-
-	reflex wander when: (wander = true) or !(BusyAgents contains self.name) {
-		self.speed<-1.0;
-		list<point> clusters <-[{10,90}, {25,25}, {65,65}];
-		point cluster <- clusters[rnd(0,2)];
-		do goto target:cluster; // go to random cluster and start wandering
-		do wander;		
-	}
-
-	reflex go_travel when: (travel = true) {
-		if (target = 'bar') {
-			targetPoint <- {0,0}; // Bar location
-			do goto target:targetPoint;
-		} else if (target = 'concerthall') {
-			targetPoint <- {100,100};	// Concert hall location
-			do goto target:targetPoint;
-		} else {
-			targetPoint <- {100,0};	// virtual hall location
-			do goto target:targetPoint;
-		}
-	}
-	
-	// This only gets triggered if the agent is at location == target
-    reflex findNeighbor when: (location = targetPoint) and (travel = true) {
-		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		agent neighbor;
-		loop n over: neighbors {
-			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') and (n.name != 'VirtualHall0') {
-				neighbor <- n;
-				write 'I am ' + self.name + ' and my neighbor at ' + target + ' is : ' + neighbor;
-			}
-		}
-		
-		if (length(neighbors) <= 1) {
-			if (target = 'bar') {
-				firstArrivalBar <- self.name;
-			}
-			else if (target = 'concerthall') {
-				firstArrivalConcertHall <- self.name;
-			}
-			else {
-				firstArrivalVirtualHall <- self.name;
-			}
-		}
-		else { // neighbor is not nil
-			if (firstArrivalBar = self.name) or (firstArrivalConcertHall = self.name) or (firstArrivalVirtualHall = self.name) {
-				// start conversation
-				do startConveration;
-			}
-		}
-	}
-	
-	reflex respondToInitiator when:(!empty(requests)) {
-		message requestFromInitiator<-(requests at 0);
-		float initiatorPersonality <- requestFromInitiator.contents as float;
-		list fl<-requestFromInitiator.contents;
-		//write(fl[0]);
-		initiatorPersonality<-fl[0] as float;
-		if (target = 'bar') {
-			// compute mood based on personality received
-			do changeMood(barPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
-		} else if (target = 'concerthall') {
-			// compute mood based on personality received
-			do changeMood(concertHallPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
-		} else {
-			// compute mood based on personality received
-			do changeMood(virtualHallPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [virtualHallPersonality]);
-		}
-		self.travel <- false;
-		self.wander <- true;
-	}
-
-	reflex readGuestResponse when: (!(empty(informs))) {
-		message responseFromGuest <- (informs at 0);
-		float guestPersonality <- responseFromGuest.contents as float;
-		//write('contents '+ responseFromGuest.contents);
-		list fl<-responseFromGuest.contents;
-		//write(fl[0]);
-		guestPersonality<-fl[0] as float;
-		//write('guestPersonality '+guestPersonality);
-		
-		if (target = 'bar') {
-			// compute mood based on personality received
-			do changeMood(barPersonality, guestPersonality);
-		} else if (target = 'concerthall') {
-			// compute mood based on personality received
-			do changeMood(concertHallPersonality, guestPersonality);
-		} else {
-			do changeMood(virtualHallPersonality, guestPersonality);
-		}
-		self.travel <- false;
-		self.wander <- true;
-		if (target = 'bar') {
-			barMeet <- "mood";
-		} 
-		else if (target = 'concerthall') {
-			concertMeet <- "mood";
-		}
-		else if (target = 'virtualhall') {
-			virtualMeet <- "mood";
-		}
-	}
-
-
-	// not a reflex because we only want to run it when called
-	action startConveration {
-		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		agent neighbor;
-		loop n over: neighbors {
-			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') and (n.name != 'VirtualHall0') {
-				neighbor <- n;
-			}
-		}
-		if (target = 'bar') {
-			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the bar';
-		} else if (target = 'concerthall') {
-			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the concert hall';		
-		} else {
-			do start_conversation (to::list(neighbor), protocol::'fipa-contract-net',performative::'request',contents::[virtualHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the virtual hall';
-		}
-	}
-
-	action changeMood (float personality, float otherAgentPersonality) {
-		// compute mood based on personality received
-		write('personality '+personality);
-		write('otherAgentPersonality '+otherAgentPersonality);
-		if (personality < otherAgentPersonality) {
-			mood <- mood + 1; // guest is greater personality, mood rises
-			write 'My ' + self.name + ' mood increased by 1: ' + mood;
-		} else if (personality > otherAgentPersonality) {
-			mood <- mood - 1; // guest is lower personality, mood falls
-			write 'My ' + self.name + ' mood decreased by 1: ' + mood;
-		} else {
-			mood <- mood + 2; // guest and I are exact matches, mood rises double
-			write 'My ' + self.name + ' mood increased by 2: ' + mood;
-		}
-	}
 }
 
-species PopGuest skills:[fipa, moving] {
-
-	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
-	bool travel <- false;
-	string target <- nil;
-	point targetPoint <- nil;
-	int index;
-
-	int mood;
-	float talkative;
-	float creative;
-	float shy;
-	float adventure;
-	float emotional;
-	float myPersonality;
-    float barPersonality;
-    float concertHallPersonality;
-	float virtualHallPersonality;
+species PopGuest parent: GuestAgent skills:[fipa, moving] {
 
 	init {
 		talkative <- rnd(0,10.0);
@@ -743,175 +577,9 @@ species PopGuest skills:[fipa, moving] {
 		rgb agentcolor<- rgb('blue');
 		draw circle(1) color: agentcolor;
 	}
-	
-	action setIndex(int num){
-		index<-num;
-	}
-
-	reflex wander when: (wander = true) or !(BusyAgents contains self.name) {
-		self.speed<-1.0;
-		list<point> clusters <-[{10,90}, {25,25}, {65,65}];
-		point cluster <- clusters[rnd(0,2)];
-		do goto target:cluster; // go to random cluster and start wandering
-		do wander;		
-	}
-
-	reflex go_travel when: (travel = true) {
-		if (target = 'bar') {
-			targetPoint <- {0,0}; // Bar location
-			do goto target:targetPoint;
-		} else if (target = 'concerthall') {
-			targetPoint <- {100,100};	// Concert hall location
-			do goto target:targetPoint;
-		} else {
-			targetPoint <- {100,0};	// virtual hall location
-			do goto target:targetPoint;
-		}
-	}
-	
-	// This only gets triggered if the agent is at location == target
-    reflex findNeighbor when: (location = targetPoint) and (travel = true) {
-		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		agent neighbor;
-		loop n over: neighbors {
-			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') and (n.name != 'VirtualHall0') {
-				neighbor <- n;
-				write 'I am ' + self.name + ' and my neighbor at ' + target + ' is : ' + neighbor;
-			}
-		}
-		
-		if (length(neighbors) <= 1) {
-			if (target = 'bar') {
-				firstArrivalBar <- self.name;
-			}
-			else if (target = 'concerthall') {
-				firstArrivalConcertHall <- self.name;
-			}
-			else {
-				firstArrivalVirtualHall <- self.name;
-			}
-		}
-		else { // neighbor is not nil
-			if (firstArrivalBar = self.name) or (firstArrivalConcertHall = self.name) or (firstArrivalVirtualHall = self.name) {
-				// start conversation
-				do startConveration;
-			}
-		}
-	}
-	
-	reflex respondToInitiator when:(!empty(requests)) {
-		message requestFromInitiator<-(requests at 0);
-		float initiatorPersonality <- requestFromInitiator.contents as float;
-		list fl<-requestFromInitiator.contents;
-		//write(fl[0]);
-		initiatorPersonality<-fl[0] as float;
-		if (target = 'bar') {
-			// compute mood based on personality received
-			do changeMood(barPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
-		} else if (target = 'concerthall') {
-			// compute mood based on personality received
-			do changeMood(concertHallPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
-		} else {
-			// compute mood based on personality received
-			do changeMood(virtualHallPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [virtualHallPersonality]);
-		}
-		self.travel <- false;
-		self.wander <- true;
-	}
-
-	reflex readGuestResponse when: (!(empty(informs))) {
-		message responseFromGuest <- (informs at 0);
-		float guestPersonality <- responseFromGuest.contents as float;
-		//write('contents '+ responseFromGuest.contents);
-		list fl<-responseFromGuest.contents;
-		//write(fl[0]);
-		guestPersonality<-fl[0] as float;
-		//write('guestPersonality '+guestPersonality);
-		if (target = 'bar') {
-			// compute mood based on personality received
-			do changeMood(barPersonality, guestPersonality);
-		} else if (target = 'concerthall') {
-			// compute mood based on personality received
-			do changeMood(concertHallPersonality, guestPersonality);
-		} else {
-			do changeMood(virtualHallPersonality, guestPersonality);
-		}
-		self.travel <- false;
-		self.wander <- true;
-		if (target = 'bar') {
-			barMeet <- "mood";
-		} 
-		else if (target = 'concerthall') {
-			concertMeet <- "mood";
-		}
-		else if (target = 'virtualhall') {
-			virtualMeet <- "mood";
-		}
-	}
-
-
-	// not a reflex because we only want to run it when called
-	action startConveration {
-		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		agent neighbor;
-		loop n over: neighbors {
-			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') and (n.name != 'VirtualHall0') {
-				neighbor <- n;
-			}
-		}
-		if (target = 'bar') {
-			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the bar';
-		} else if (target = 'concerthall') {
-			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the concert hall';		
-		} else {
-			do start_conversation (to::list(neighbor), protocol::'fipa-contract-net',performative::'request',contents::[virtualHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the virtual hall';
-		}
-	}
-
-	action changeMood (float personality, float otherAgentPersonality) {
-		// compute mood based on personality received
-		write('personality '+personality);
-		write('otherAgentPersonality '+otherAgentPersonality);
-		if (personality < otherAgentPersonality) {
-			mood <- mood + 1; // guest is greater personality, mood rises
-			write 'My ' + self.name + ' mood increased by 1: ' + mood;
-		} else if (personality > otherAgentPersonality) {
-			mood <- mood - 1; // guest is lower personality, mood falls
-			write 'My ' + self.name + ' mood decreased by 1: ' + mood;
-		} else {
-			mood <- mood + 2; // guest and I are exact matches, mood rises double
-			write 'My ' + self.name + ' mood increased by 2: ' + mood;
-		}
-	}
 }
 
-species ClassicalGuest skills:[fipa, moving] {
-
-	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
-	bool travel <- false;
-	string target <- nil;
-	point targetPoint <- nil;
-	int index;
-
-	int mood;
-	float talkative;
-	float creative;
-	float shy;
-	float adventure;
-	float emotional;
-	float myPersonality;
-    float barPersonality;
-    float concertHallPersonality;
-	float virtualHallPersonality;
+species ClassicalGuest parent: GuestAgent skills:[fipa, moving] {
 
 	init {
 		talkative <- rnd(0,10.0);
@@ -927,180 +595,13 @@ species ClassicalGuest skills:[fipa, moving] {
 		virtualHallPersonality <- myPersonality-2.5;
 	}
 
-
 	aspect base{
 		rgb agentcolor<- rgb('red');
 		draw circle(1) color: agentcolor;
 	}
-	
-	action setIndex(int num){
-		index<-num;
-	}
-
-	reflex wander when: (wander = true) or !(BusyAgents contains self.name) {
-		self.speed<-1.0;
-		list<point> clusters <-[{10,90}, {25,25}, {65,65}];
-		point cluster <- clusters[rnd(0,2)];
-		do goto target:cluster; // go to random cluster and start wandering
-		do wander;		
-	}
-
-	reflex go_travel when: (travel = true) {
-		if (target = 'bar') {
-			targetPoint <- {0,0}; // Bar location
-			do goto target:targetPoint;
-		} else if (target = 'concerthall') {
-			targetPoint <- {100,100};	// Concert hall location
-			do goto target:targetPoint;
-		} else {
-			targetPoint <- {100,0};	// virtual hall location
-			do goto target:targetPoint;
-		}
-	}
-	
-	// This only gets triggered if the agent is at location == target
-    reflex findNeighbor when: (location = targetPoint) and (travel = true) {
-		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		agent neighbor;
-		loop n over: neighbors {
-			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') and (n.name != 'VirtualHall0') {
-				neighbor <- n;
-				write 'I am ' + self.name + ' and my neighbor at ' + target + ' is : ' + neighbor;
-			}
-		}
-		
-		if (length(neighbors) <= 1) {
-			if (target = 'bar') {
-				firstArrivalBar <- self.name;
-			}
-			else if (target = 'concerthall') {
-				firstArrivalConcertHall <- self.name;
-			}
-			else {
-				firstArrivalVirtualHall <- self.name;
-			}
-		}
-		else { // neighbor is not nil
-			if (firstArrivalBar = self.name) or (firstArrivalConcertHall = self.name) or (firstArrivalVirtualHall = self.name) {
-				// start conversation
-				do startConveration;
-			}
-		}
-	}
-	
-	reflex respondToInitiator when:(!empty(requests)) {
-		message requestFromInitiator<-(requests at 0);
-		float initiatorPersonality <- requestFromInitiator.contents as float;
-		list fl<-requestFromInitiator.contents;
-		//write(fl[0]);
-		initiatorPersonality<-fl[0] as float;
-		if (target = 'bar') {
-			// compute mood based on personality received
-			do changeMood(barPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
-		} else if (target = 'concerthall') {
-			// compute mood based on personality received
-			do changeMood(concertHallPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
-		} else {
-			// compute mood based on personality received
-			do changeMood(virtualHallPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [virtualHallPersonality]);
-		}
-		self.travel <- false;
-		self.wander <- true;
-	}
-
-	reflex readGuestResponse when: (!(empty(informs))) {
-		message responseFromGuest <- (informs at 0);
-		float guestPersonality <- responseFromGuest.contents as float;
-		//write('contents '+ responseFromGuest.contents);
-		list fl<-responseFromGuest.contents;
-		//write(fl[0]);
-		guestPersonality<-fl[0] as float;
-		//write('guestPersonality '+guestPersonality);
-		if (target = 'bar') {
-			// compute mood based on personality received
-			do changeMood(barPersonality, guestPersonality);
-		} else if (target = 'concerthall') {
-			// compute mood based on personality received
-			do changeMood(concertHallPersonality, guestPersonality);
-		} else {
-			do changeMood(virtualHallPersonality, guestPersonality);
-		}
-		self.travel <- false;
-		self.wander <- true;
-		if (target = 'bar') {
-			barMeet <- "mood";
-		} 
-		else if (target = 'concerthall') {
-			concertMeet <- "mood";
-		}
-		else if (target = 'virtualhall') {
-			virtualMeet <- "mood";
-		}
-	}
-
-
-	// not a reflex because we only want to run it when called
-	action startConveration {
-		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		agent neighbor;
-		loop n over: neighbors {
-			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') and (n.name != 'VirtualHall0') {
-				neighbor <- n;
-			}
-		}
-		if (target = 'bar') {
-			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the bar';
-		} else if (target = 'concerthall') {
-			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the concert hall';		
-		} else {
-			do start_conversation (to::list(neighbor), protocol::'fipa-contract-net',performative::'request',contents::[virtualHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the virtual hall';
-		}
-	}
-
-	action changeMood (float personality, float otherAgentPersonality) {
-		// compute mood based on personality received
-		write('personality '+personality);
-		write('otherAgentPersonality '+otherAgentPersonality);
-		if (personality < otherAgentPersonality) {
-			mood <- mood + 1; // guest is greater personality, mood rises
-			write 'My ' + self.name + ' mood increased by 1: ' + mood;
-		} else if (personality > otherAgentPersonality) {
-			mood <- mood - 1; // guest is lower personality, mood falls
-			write 'My ' + self.name + ' mood decreased by 1: ' + mood;
-		} else {
-			mood <- mood + 2; // guest and I are exact matches, mood rises double
-			write 'My ' + self.name + ' mood increased by 2: ' + mood;
-		}
-	}
 }
 
-species IndieGuest skills:[fipa, moving] {
-
-	bool wander <- true; //	string travelStatus <- 'stopped'; // stopped , talking , moving
-	bool travel <- false;
-	string target <- nil;
-	point targetPoint <- nil;
-	int index;
-
-	int mood;
-	float talkative;
-	float creative;
-	float shy;
-	float adventure;
-	float emotional;
-	float myPersonality;
-    float barPersonality;
-    float concertHallPersonality;
-	float virtualHallPersonality;
+species IndieGuest parent: GuestAgent skills:[fipa, moving] {
 
 	init {
 		talkative <- rnd(0,10.0);
@@ -1119,156 +620,6 @@ species IndieGuest skills:[fipa, moving] {
 	aspect base{
 		rgb agentcolor<- rgb('black');	
 		draw circle(1) color: agentcolor;
-	}
-	
-	action setIndex(int num){
-		index<-num;
-	}
-
-	reflex wander when: (wander = true) or !(BusyAgents contains self.name) {
-		self.speed<-1.0;
-		list<point> clusters <-[{10,90}, {25,25}, {65,65}];
-		point cluster <- clusters[rnd(0,2)];
-		do goto target:cluster; // go to random cluster and start wandering
-		do wander;		
-	}
-
-	reflex go_travel when: (travel = true) {
-		if (target = 'bar') {
-			targetPoint <- {0,0}; // Bar location
-			do goto target:targetPoint;
-		} else if (target = 'concerthall') {
-			targetPoint <- {100,100};	// Concert hall location
-			do goto target:targetPoint;
-		} else {
-			targetPoint <- {100,0};	// virtual hall location
-			do goto target:targetPoint;
-		}
-	}
-	
-	// This only gets triggered if the agent is at location == target
-    reflex findNeighbor when: (location = targetPoint) and (travel = true) {
-		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		agent neighbor;
-		loop n over: neighbors {
-			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') and (n.name != 'VirtualHall0') {
-				neighbor <- n;
-				write 'I am ' + self.name + ' and my neighbor at ' + target + ' is : ' + neighbor;
-			}
-		}
-		
-		if (length(neighbors) <= 1) {
-			if (target = 'bar') {
-				firstArrivalBar <- self.name;
-			}
-			else if (target = 'concerthall') {
-				firstArrivalConcertHall <- self.name;
-			}
-			else {
-				firstArrivalVirtualHall <- self.name;
-			}
-		}
-		else { // neighbor is not nil
-			if (firstArrivalBar = self.name) or (firstArrivalConcertHall = self.name) or (firstArrivalVirtualHall = self.name) {
-				// start conversation
-				do startConveration;
-			}
-		}
-	}
-	
-	reflex respondToInitiator when:(!empty(requests)) {
-		message requestFromInitiator<-(requests at 0);
-		float initiatorPersonality <- requestFromInitiator.contents as float;
-		list fl<-requestFromInitiator.contents;
-		//write(fl[0]);
-		initiatorPersonality<-fl[0] as float;
-		
-		if (target = 'bar') {
-			// compute mood based on personality received
-			do changeMood(barPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [barPersonality]);
-		} else if (target = 'concerthall') {
-			// compute mood based on personality received
-			do changeMood(concertHallPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [concertHallPersonality]);
-		} else {
-			// compute mood based on personality received
-			do changeMood(virtualHallPersonality, initiatorPersonality);
-			// respond with your own personality
-			do inform with: (message: requestFromInitiator, contents: [virtualHallPersonality]);
-		}
-		self.travel <- false;
-		self.wander <- true;
-	}
-
-	reflex readGuestResponse when: (!(empty(informs))) {
-		message responseFromGuest <- (informs at 0);
-		float guestPersonality <- responseFromGuest.contents as float;
-		//write('contents '+ responseFromGuest.contents);
-		list fl<-responseFromGuest.contents;
-		//write(fl[0]);
-		guestPersonality<-fl[0] as float;
-		//write('guestPersonality '+guestPersonality);
-		if (target = 'bar') {
-			// compute mood based on personality received
-			do changeMood(barPersonality, guestPersonality);
-		} else if (target = 'concerthall') {
-			// compute mood based on personality received
-			do changeMood(concertHallPersonality, guestPersonality);
-		} else {
-			do changeMood(virtualHallPersonality, guestPersonality);
-		}
-		self.travel <- false;
-		self.wander <- true;
-		if (target = 'bar') {
-			barMeet <- "mood";
-		} 
-		else if (target = 'concerthall') {
-			concertMeet <- "mood";
-		}
-		else if (target = 'virtualhall') {
-			virtualMeet <- "mood";
-		}
-	}
-
-
-	// not a reflex because we only want to run it when called
-	action startConveration {
-		list<agent> neighbors <- agents at_distance(1); // finds any agent located at a distance <= 2 from the caller agent. This will only happen if an agent is already at the same target point
-		agent neighbor;
-		loop n over: neighbors {
-			if (n.name != 'ConcertHall0') and (n.name != 'Bar0') and (n.name != 'VirtualHall0') {
-				neighbor <- n;
-			}
-		}
-		if (target = 'bar') {
-			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[barPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the bar';
-		} else if (target = 'concerthall') {
-			do start_conversation (to::list(neighbor),protocol::'fipa-contract-net',performative::'request',contents::[concertHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the concert hall';		
-		} else {
-			do start_conversation (to::list(neighbor), protocol::'fipa-contract-net',performative::'request',contents::[virtualHallPersonality]);
-			write 'I ' + self.name + ' have started the conversation with - ' + neighbor + ' at the virtual hall';
-		}
-	}
-
-	action changeMood (float personality, float otherAgentPersonality) {
-		// compute mood based on personality received
-		write('personality '+personality);
-		write('otherAgentPersonality '+otherAgentPersonality);
-		if (personality < otherAgentPersonality) {
-			mood <- mood + 1; // guest is greater personality, mood rises
-			write 'My ' + self.name + ' mood increased by 1: ' + mood;
-		} else if (personality > otherAgentPersonality) {
-			mood <- mood - 1; // guest is lower personality, mood falls
-			write 'My ' + self.name + ' mood decreased by 1: ' + mood;
-		} else {
-			mood <- mood + 2; // guest and I are exact matches, mood rises double
-			write 'My ' + self.name + ' mood increased by 2: ' + mood;
-		}
 	}
 }
 
