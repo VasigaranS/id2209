@@ -324,11 +324,11 @@ species GuestAgent skills:[fipa, moving] {
 	float virtualHallPersonality;
 	
 	init {
-		talkative <- rnd(0,10.0);
-		creative <- rnd(0,10.0);
-		shy <- rnd(0,10.0);
-		adventure <- rnd(0,10.0);
-		emotional <- rnd(0,10.0);
+		talkative <- 1.0;
+		creative <- 1.0;
+		shy <- 1.0;
+		adventure <- 1.0;
+		emotional <- 1.0;
 		mood <- rnd(0,10); // start with a random mood
         // weighted personalities based on what attributes they like more
 		myPersonality <- (talkative * 1) + (creative * 0.75) + (shy * 0) + (adventure * 0.5) + (emotional * 0.25);
@@ -481,11 +481,11 @@ species GuestAgent skills:[fipa, moving] {
 species RockGuest parent: GuestAgent skills:[fipa, moving] {
 		
 	init {
-		talkative <- rnd(0,10.0);
-		creative <- rnd(0,10.0);
-		shy <- rnd(0,10.0);
-		adventure <- rnd(0,10.0);
-		emotional <- rnd(0,10.0);
+		talkative <- 1.0;
+		creative <- 1.0;
+		shy <- 1.0;
+		adventure <- 1.0;
+		emotional <- 1.0;
 		mood <- rnd(0,10); // start with a random mood
         // weighted personalities based on what attributes they like more
 		myPersonality <- (talkative * 1) + (creative * 0.75) + (shy * 0) + (adventure * 0.5) + (emotional * 0.25);
@@ -503,11 +503,11 @@ species RockGuest parent: GuestAgent skills:[fipa, moving] {
 species RapGuest parent: GuestAgent skills:[fipa, moving] {
 
 	init {
-		talkative <- rnd(0,10.0);
-		creative <- rnd(0,10.0);
-		shy <- rnd(0,10.0);
-		adventure <- rnd(0,10.0);
-		emotional <- rnd(0,10.0);
+		talkative <- 1.0;
+		creative <- 1.0;
+		shy <- 1.0;
+		adventure <- 1.0;
+		emotional <- 1.0;
 		mood <- rnd(0,10); // start with a random mood
         // weighted personalities based on what attributes they like more
 		myPersonality <- (talkative * 0.25) + (creative * 0) + (shy * 0.5) + (adventure * 1) + (emotional * 0.75);
@@ -525,11 +525,11 @@ species RapGuest parent: GuestAgent skills:[fipa, moving] {
 species PopGuest parent: GuestAgent skills:[fipa, moving] {
 
 	init {
-		talkative <- rnd(0,10.0);
-		creative <- rnd(0,10.0);
-		shy <- rnd(0,10.0);
-		adventure <- rnd(0,10.0);
-		emotional <- rnd(0,10.0);
+		talkative <- 1.0;
+		creative <- 1.0;
+		shy <- 1.0;
+		adventure <- 1.0;
+		emotional <- 1.0;
 		mood <- rnd(0,10); // start with a random mood
         // weighted personalities based on what attributes they like more
 		myPersonality <- (talkative * 0.75) + (creative * 0.5) + (shy * 1) + (adventure * 0) + (emotional * 0.25);
@@ -547,11 +547,11 @@ species PopGuest parent: GuestAgent skills:[fipa, moving] {
 species ClassicalGuest parent: GuestAgent skills:[fipa, moving] {
 
 	init {
-		talkative <- rnd(0,10.0);
-		creative <- rnd(0,10.0);
-		shy <- rnd(0,10.0);
-		adventure <- rnd(0,10.0);
-		emotional <- rnd(0,10.0);
+		talkative <- 1.0;
+		creative <- 1.0;
+		shy <- 1.0;
+		adventure <- 1.0;
+		emotional <- 1.0;
 		mood <- rnd(0,10); // start with a random mood
         // weighted personalities based on what attributes they like more
 		myPersonality <- (talkative * 0.5) + (creative * 1) + (shy * 0.75) + (adventure * 0.25) + (emotional * 0); // Range: [0 - 25]
@@ -569,11 +569,11 @@ species ClassicalGuest parent: GuestAgent skills:[fipa, moving] {
 species IndieGuest parent: GuestAgent skills:[fipa, moving] {
 
 	init {
-		talkative <- rnd(0,10.0);
-		creative <- rnd(0,10.0);
-		shy <- rnd(0,10.0);
-		adventure <- rnd(0,10.0);
-		emotional <- rnd(0,10.0);
+		talkative <- 1.0;
+		creative <- 1.0;
+		shy <- 1.0;
+		adventure <- 1.0;
+		emotional <- 1.0;
 		mood <- rnd(0,10); // start with a random mood
         // weighted personalities based on what attributes they like more
 		myPersonality <- (talkative * 0) + (creative * 0.25) + (shy * 1) + (adventure * 0.75) + (emotional * 0.5);
