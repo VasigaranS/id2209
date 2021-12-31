@@ -618,11 +618,11 @@ experiment name type: gui {
 			species ConcertHall aspect:base;
 			species VirtualHall aspect:base;
 		}
-		display simulationChart {
-			chart "global_mood" type: series {
-    			data "GlobalMood" value: averageGlobalMood color: #red;
+		//display simulationChart {
+	//		chart "global_mood" type: series {
+   // 			data "GlobalMood" value: averageGlobalMood color: #red;
 //       		 	data "TotalInteractions" value: globalCycles color: #blue;
-        	}
-		}
+     //   	}
+	//	}
 	}
 }
